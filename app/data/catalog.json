@@ -1,0 +1,30 @@
+{
+  "_note": "Typical published specs for common models sold in India (approximate; variants differ). 'Other / local brand' falls back to generic figures.",
+  "smartphone": {
+    "Apple": {"iPhone X": {"weight_g": 174, "battery_mah": 2716}, "iPhone 11": {"weight_g": 194, "battery_mah": 3110}, "iPhone 12": {"weight_g": 164, "battery_mah": 2815}, "iPhone 13": {"weight_g": 174, "battery_mah": 3240}},
+    "Samsung": {"Galaxy M31": {"weight_g": 191, "battery_mah": 6000}, "Galaxy A52": {"weight_g": 189, "battery_mah": 4500}, "Galaxy S21": {"weight_g": 169, "battery_mah": 4000}},
+    "Xiaomi / Redmi": {"Redmi Note 8": {"weight_g": 190, "battery_mah": 4000}, "Redmi Note 10": {"weight_g": 179, "battery_mah": 5000}},
+    "Realme": {"Realme 8": {"weight_g": 177, "battery_mah": 5000}},
+    "OnePlus": {"OnePlus Nord": {"weight_g": 184, "battery_mah": 4115}},
+    "Vivo": {"Vivo Y20": {"weight_g": 192, "battery_mah": 5000}}
+  },
+  "laptop": {
+    "Apple": {"MacBook Air (M1)": {"weight_g": 1290}},
+    "Dell": {"Inspiron 15 3000": {"weight_g": 1830}},
+    "HP": {"Pavilion 15": {"weight_g": 1750}},
+    "Lenovo": {"IdeaPad 3": {"weight_g": 1650}},
+    "Asus": {"VivoBook 15": {"weight_g": 1800}}
+  },
+  "tablet": {
+    "Apple": {"iPad (9th gen)": {"weight_g": 487, "battery_mah": 8557}, "iPad Air (4th gen)": {"weight_g": 458, "battery_mah": 7606}},
+    "Samsung": {"Galaxy Tab A7": {"weight_g": 476, "battery_mah": 7040}},
+    "Lenovo": {"Tab M10": {"weight_g": 460, "battery_mah": 5000}}
+  },
+  "cable": {"_brands": ["Apple", "Samsung", "boAt", "Ambrane", "Portronics"]},
+  "charger_adapter": {"_brands": ["Apple", "Samsung", "Xiaomi / Redmi", "OnePlus", "Dell", "HP", "Lenovo"]},
+  "battery_powerbank": {"_brands": ["Xiaomi / Redmi", "Ambrane", "boAt", "Realme"], "_capacities_mah": [5000, 10000, 20000]},
+  "earphones_headphones": {"_brands": ["Apple", "boAt", "JBL", "Sony", "Realme", "OnePlus"]},
+  "keyboard_mouse": {"_brands": ["Logitech", "Dell", "HP", "Zebronics"]},
+  "pcb_board": {"_brands": []},
+  "cable_lengths_m": [0.5, 1, 1.5, 2, 3]
+}

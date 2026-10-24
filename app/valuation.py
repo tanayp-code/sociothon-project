@@ -86,6 +86,41 @@ def _num(details: Dict[str, Any], key: str) -> Optional[float]:
         return None
 
 
+def resolve_details(item_class: str, raw: Dict[str, Any]) -> Dict[str, Any]:
+    """Only accepts values from catalog.json; anything else counts as 'Other / local brand'."""
+    catalog = load_json("catalog.json")
+    section = catalog.get(item_class, {})
+    brands = [b for b in section if not b.startswith("_")] or section.get("_brands", [])
+    out: Dict[str, Any] = {}
+    brand = raw.get("brand")
+    if brand in brands:
+        out["brand"] = brand
+        model = raw.get("model")
+        specs = section.get(brand, {}).get(model) if isinstance(section.get(brand), dict) else None
+        if specs:
+            out["model"] = model
+            out.update(specs)  # weight_g / battery_mah come from the catalog, never from the client
+    else:
+        out["local"] = True
+    if item_class == "cable":
+        if raw.get("cable_type") in CABLE_COPPER_MM2:
+            out["cable_type"] = raw["cable_type"]
+        try:
+            length = float(raw.get("cable_length_m"))
+            if length in catalog.get("cable_lengths_m", []):
+                out["cable_length_m"] = length
+        except (TypeError, ValueError):
+            pass
+    if item_class == "battery_powerbank":
+        try:
+            mah = int(float(raw.get("battery_mah")))
+            if mah in section.get("_capacities_mah", []):
+                out["battery_mah"] = mah
+        except (TypeError, ValueError):
+            pass
+    return out
+
+
 def refine_materials(item_class: str, item_info: Dict[str, Any], details: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:
     """Adjusts the generic per-item figures using what we know about this exact item."""
     info = dict(item_info)
@@ -94,10 +129,14 @@ def refine_materials(item_class: str, item_info: Dict[str, Any], details: Dict[s
         length = _num(details, "cable_length_m") or 1.0
         ctype = details.get("cable_type") if details.get("cable_type") in CABLE_COPPER_MM2 else "usb_data"
         lo, hi = CABLE_COPPER_MM2[ctype]
+        if details.get("local"):
+            # Unbranded cables often use thinner wire or copper-clad aluminium (assumption: about half the copper).
+            lo, hi = round(lo * 0.5, 2), round(hi * 0.5, 2)
         # mm² × m = cm³
         info["copper_g"] = [round(length * lo * COPPER_DENSITY_G_PER_CM3, 1), round(length * hi * COPPER_DENSITY_G_PER_CM3, 1)]
         basis.append(f"Copper = {length:g} m × {lo}–{hi} mm² ({ctype.replace('_', ' ')}) × 8.96 g/cm³"
-                     + ("" if _num(details, "cable_length_m") else " (length assumed 1 m)"))
+                     + ("" if _num(details, "cable_length_m") else " (length assumed 1 m)")
+                     + (" — local brand: assumed thinner / copper-clad wire" if details.get("local") else ""))
     mah = _num(details, "battery_mah")
     if mah:
         info["lithium_g"] = round(mah / 1000.0 * LITHIUM_G_PER_AH, 2)
@@ -113,6 +152,8 @@ def refine_materials(item_class: str, item_info: Dict[str, Any], details: Dict[s
             elif isinstance(v, (int, float)):
                 info[k] = round(v * ratio, 1)
         basis.append(f"Metals scaled by weight: {weight:g} g vs typical {typical:g} g (×{ratio:.2f})")
+    if details.get("local") and item_class != "cable":
+        basis.append("Other / local brand: generic figures for a typical " + item_class.replace("_", " "))
     return info, basis
 
 
@@ -128,10 +169,10 @@ def assess_item(item_class: str, powers_on: bool, data_wiped: bool, details: Opt
 
     item_info = materials_catalog.get(item_class, materials_catalog.get("unknown", {}))
     stores_data = item_info.get("stores_data", False)
-    details = details or {}
+    details = resolve_details(item_class, details or {})
     item_info, estimate_basis = refine_materials(item_class, item_info, details)
-    if not estimate_basis:
-        estimate_basis = ["Generic figures for a typical " + item_class.replace("_", " ") + ". Add details for a sharper estimate."]
+    if not estimate_basis or (len(estimate_basis) == 1 and estimate_basis[0].startswith("Other / local")):
+        estimate_basis = estimate_basis or ["Generic figures for a typical " + item_class.replace("_", " ") + ". Add details for a sharper estimate."]
 
     # Action triage: swap if functional, dropoff if dead/scrap
     action = "swap" if powers_on else "dropoff"
@@ -188,6 +229,7 @@ def assess_item(item_class: str, powers_on: bool, data_wiped: bool, details: Opt
         "wipe_checklist": wipe_checklist,
         "wipe_before_swap": wipe_before_swap,
         "estimate_precision": "refined" if any(details.get(k) for k in ("weight_g", "battery_mah", "cable_length_m", "cable_type")) else "generic",
+        "local_brand": bool(details.get("local")),
         "estimate_basis": estimate_basis,
         "brand": details.get("brand"),
         "model": details.get("model"),

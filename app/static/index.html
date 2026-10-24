@@ -227,17 +227,17 @@
               <summary style="cursor:pointer;font-weight:600;">3. Item details (optional, for a sharper estimate)</summary>
               <p id="details-hint" style="font-size:13px;color:var(--gray-text);margin:8px 0;"></p>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">
-                <label style="font-size:13px;">Brand<input id="d-brand" type="text" placeholder="e.g. Samsung" class="d-input"></label>
-                <label style="font-size:13px;">Model<input id="d-model" type="text" placeholder="e.g. Galaxy M31" class="d-input"></label>
-                <label class="d-field" data-for="device" style="font-size:13px;">Weight (g)<input id="d-weight" type="number" min="0" class="d-input"></label>
-                <label class="d-field" data-for="battery" style="font-size:13px;">Battery (mAh)<input id="d-mah" type="number" min="0" class="d-input"></label>
-                <label class="d-field" data-for="cable" style="font-size:13px;">Cable length (m)<input id="d-length" type="number" min="0" step="0.1" class="d-input"></label>
+                <label style="font-size:13px;">Brand<select id="d-brand" class="d-input" onchange="fillModelOptions()"></select></label>
+                <label class="d-field" data-for="model" style="font-size:13px;">Model<select id="d-model" class="d-input" onchange="showModelSpecs()"></select></label>
+                <label class="d-field" data-for="powerbank" style="font-size:13px;">Capacity<select id="d-mah" class="d-input"></select></label>
+                <label class="d-field" data-for="cable" style="font-size:13px;">Cable length<select id="d-length" class="d-input"></select></label>
                 <label class="d-field" data-for="cable" style="font-size:13px;">Cable type
                   <select id="d-ctype" class="d-input">
                     <option value="">Not sure</option><option value="usb_data">USB / charging</option>
                     <option value="power_cord">Power cord (thick)</option><option value="hdmi_video">HDMI / video</option><option value="audio">Audio / aux</option>
                   </select></label>
               </div>
+              <p id="model-specs" style="font-size:13px;color:var(--gray-text);margin:8px 0 0;"></p>
             </details>
 
             <button class="btn btn-block" onclick="runAssessment()">Calculate Value & Next Step →</button>
@@ -908,30 +908,67 @@
     }
     function toggleDetails() { setDetailsVisible(!document.getElementById('details-toggle').dataset.open); }
 
-    // Item details: prefilled from what the AI recognised, editable by the user.
-    function fillItemDetails(data) {
-      const specs = data.specs || {};
-      const set = (id, v) => { document.getElementById(id).value = v ?? ''; };
-      set('d-brand', data.brand); set('d-model', data.model);
-      set('d-weight', specs.weight_g); set('d-mah', specs.battery_mah);
-      set('d-length', specs.cable_length_m); set('d-ctype', specs.cable_type || '');
-      const c = currentScan.item_class;
-      const show = { cable: c === 'cable', battery: ['battery_powerbank', 'smartphone', 'laptop', 'tablet'].includes(c),
-                     device: !['cable', 'unknown'].includes(c) };
+    // Item details: dropdowns from /api/catalog, preselected from what the AI recognised.
+    let catalog = null;
+    const OTHER = '__other__';
+    async function loadCatalog() {
+      if (!catalog) { try { catalog = await (await fetch('/api/catalog')).json(); } catch (e) { catalog = {}; } }
+      return catalog;
+    }
+    const norm = t => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const options = (el, list, labelOther) => {
+      el.innerHTML = list.map(([v, l]) => `<option value="${v}">${l}</option>`).join('') + (labelOther ? `<option value="${OTHER}">${labelOther}</option>` : '');
+    };
+    function brandsFor(c) {
+      const sec = (catalog || {})[c] || {};
+      return Object.keys(sec).filter(k => !k.startsWith('_')).concat(sec._brands || []);
+    }
+    function fillModelOptions(preferred) {
+      const c = currentScan.item_class, brand = document.getElementById('d-brand').value;
+      const models = Object.keys((((catalog || {})[c] || {})[brand]) || {});
+      options(document.getElementById('d-model'), models.map(m => [m, m]), 'Other model (use typical values)');
+      // Only preselect when the AI named a specific catalog model ("iPhone" alone stays "Other model").
+      const match = models.slice().sort((a, b) => b.length - a.length).find(m => preferred && norm(preferred).includes(norm(m)));
+      document.getElementById('d-model').value = match || OTHER;
+      showModelSpecs();
+    }
+    function showModelSpecs() {
+      const c = currentScan.item_class, b = document.getElementById('d-brand').value, m = document.getElementById('d-model').value;
+      const spec = ((((catalog || {})[c] || {})[b]) || {})[m];
+      document.getElementById('model-specs').innerText = spec
+        ? `Typical specs: ${spec.weight_g} g` + (spec.battery_mah ? `, ${spec.battery_mah} mAh battery` : '')
+        : (b === OTHER ? 'Other / local brand: we assume a typical local product.' : '');
+    }
+    async function fillItemDetails(data) {
+      await loadCatalog();
+      const c = currentScan.item_class, specs = data.specs || {};
+      const brands = brandsFor(c);
+      options(document.getElementById('d-brand'), brands.map(b => [b, b]), 'Other / local brand');
+      const aiBrand = brands.find(b => data.brand && b.split('/').some(part => norm(part) && (norm(data.brand).includes(norm(part)) || norm(part).includes(norm(data.brand)))));
+      document.getElementById('d-brand').value = aiBrand || OTHER;
+      fillModelOptions(data.model);
+      const caps = ((catalog[c] || {})._capacities_mah) || [];
+      options(document.getElementById('d-mah'), caps.map(v => [v, v + ' mAh']), 'Not sure');
+      const nearest = (list, v) => v ? list.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a, list[0]) : null;
+      document.getElementById('d-mah').value = nearest(caps, specs.battery_mah) ?? OTHER;
+      const lengths = catalog.cable_lengths_m || [];
+      options(document.getElementById('d-length'), lengths.map(v => [v, v + ' m']), 'Not sure (assume 1 m)');
+      document.getElementById('d-length').value = nearest(lengths, specs.cable_length_m) ?? OTHER;
+      document.getElementById('d-ctype').value = specs.cable_type || '';
+      const show = { model: ['smartphone', 'laptop', 'tablet'].includes(c), powerbank: c === 'battery_powerbank', cable: c === 'cable' };
       document.querySelectorAll('.d-field').forEach(el => { el.hidden = !show[el.dataset.for]; });
       const found = [data.brand, data.model].filter(Boolean).join(' ');
       document.getElementById('details-hint').innerText = found
-        ? `AI thinks this is a ${found}. Check the numbers or correct them.`
-        : 'AI could not tell the exact model. Any numbers below are its rough guesses; correct what you know.';
+        ? `AI thinks this is a ${found}. Check the selection below.`
+        : 'AI could not tell the brand. Pick it if you know it, otherwise we assume a local product.';
       document.getElementById('item-details').open = !!found;
     }
     function readItemDetails() {
-      const fields = { brand: 'd-brand', model: 'd-model', weight_g: 'd-weight', battery_mah: 'd-mah',
-                       cable_length_m: 'd-length', cable_type: 'd-ctype' };
+      const fields = { brand: 'd-brand', model: 'd-model', battery_mah: 'd-mah', cable_length_m: 'd-length', cable_type: 'd-ctype' };
       const d = {};
       for (const [key, id] of Object.entries(fields)) {
         const el = document.getElementById(id);
-        if (el.value.trim() && !el.closest('[hidden]')) d[key] = el.value.trim();  // skip empty / not-applicable fields
+        if (el.value && el.value !== OTHER && !el.closest('[hidden]')) d[key] = el.value;  // server validates against the catalog
       }
       return d;
     }

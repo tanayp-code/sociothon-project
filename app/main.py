@@ -116,6 +116,12 @@ def cached_pile(contents: bytes) -> Dict[str, Any]:
     return result
 
 
+@app.get("/api/catalog")
+def get_catalog() -> Dict[str, Any]:
+    """Brands, models and preset values for the item-details dropdowns."""
+    return load_json("catalog.json")
+
+
 @app.post("/api/scan_pile")
 async def scan_pile(file: UploadFile = File(...)) -> Dict[str, Any]:
     """One photo of many items -> list of detected items with counts."""
