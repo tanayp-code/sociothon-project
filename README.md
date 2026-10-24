@@ -17,6 +17,9 @@ Instead of building cost-prohibitive custom hardware, Circl-E combines:
 
 ---
 
+## 🗃️ My Drawer (bulk inventory)
+Scan many gadgets at once (or add manually), compare their metal value in a sorted table, toggle "works?" to route each item to swap or e-waste, and **export / import CSV** — for a student's room, a hostel wing, or a department store room.
+
 ## 🏗️ Architecture
 
 ```
