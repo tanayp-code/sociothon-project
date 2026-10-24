@@ -31,6 +31,7 @@ ALLOWED_CLASSES = [
     "earphones_headphones",
     "keyboard_mouse",
     "pcb_board",
+    "tablet",
 ]
 
 GEMINI_MODELS = [
@@ -61,6 +62,7 @@ Classify the item into EXACTLY ONE of the following item_class categories:
 - earphones_headphones (in-ear buds, wireless earbuds, overhead headphones)
 - keyboard_mouse (computer keyboards, computer mice, trackpads)
 - pcb_board (printed circuit boards, motherboards, green/blue circuitry)
+- tablet (iPads, Android tablets, e-readers)
 - unknown (non-electronics, unclear images, or items not matching the above categories)
 
 You must also inspect for visible damage:
@@ -82,6 +84,11 @@ Return a JSON object with:
 """
 
 
+def _api_keys(name: str) -> List[str]:
+    """Env var may hold several comma-separated keys; we rotate through them when one runs out."""
+    return [k.strip() for k in os.getenv(name, "").split(",") if k.strip()]
+
+
 def _downscale_image(image_bytes: bytes, max_dim: int = 768) -> bytes:
     """Downscales image to max_dim on the longest edge to optimize latency and token cost."""
     try:
@@ -98,9 +105,19 @@ def _downscale_image(image_bytes: bytes, max_dim: int = 768) -> bytes:
 
 def _call_gemini_api(processed_bytes: bytes, prompt: str = SYSTEM_PROMPT) -> Dict[str, Any]:
     """Invokes Gemini Flash API."""
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    keys = _api_keys("GEMINI_API_KEY")
+    if not keys:
         raise ValueError("GEMINI_API_KEY is not set")
+    last_error = None
+    for api_key in keys:
+        try:
+            return _call_gemini_with_key(processed_bytes, prompt, api_key)
+        except Exception as e:
+            last_error = e
+    raise RuntimeError(f"All Gemini keys failed: {last_error}")
+
+
+def _call_gemini_with_key(processed_bytes: bytes, prompt: str, api_key: str) -> Dict[str, Any]:
 
     # No silent retries: on quota errors fail fast so we can fall back to Groq.
     client = genai.Client(api_key=api_key, http_options=types.HttpOptions(
@@ -133,9 +150,19 @@ def _call_gemini_api(processed_bytes: bytes, prompt: str = SYSTEM_PROMPT) -> Dic
 
 def _call_groq_api(processed_bytes: bytes, prompt: str = SYSTEM_PROMPT) -> Dict[str, Any]:
     """Fallback: Invokes Groq Vision API via OpenAI-compatible endpoint."""
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
+    keys = _api_keys("GROQ_API_KEY")
+    if not keys:
         raise ValueError("GROQ_API_KEY is not set")
+    last_error = None
+    for api_key in keys:
+        try:
+            return _call_groq_with_key(processed_bytes, prompt, api_key)
+        except Exception as e:
+            last_error = e
+    raise RuntimeError(f"All Groq keys failed: {last_error}")
+
+
+def _call_groq_with_key(processed_bytes: bytes, prompt: str, api_key: str) -> Dict[str, Any]:
 
     b64_img = base64.b64encode(processed_bytes).decode("utf-8")
 
@@ -298,7 +325,7 @@ PILE_PROMPT = """You are an expert e-waste inspector. The image shows a PILE or 
 (e.g. a drawer emptied onto a bed). List EVERY distinct electronic item you can see.
 
 Use ONLY these item_class values:
-smartphone, laptop, charger_adapter, cable, battery_powerbank, earphones_headphones, keyboard_mouse, pcb_board, unknown
+smartphone, laptop, tablet, charger_adapter, cable, battery_powerbank, earphones_headphones, keyboard_mouse, pcb_board, unknown
 
 Group identical items and give a count. Note visible damage per group ("cracked screen", "swollen battery",
 "frayed wire", ... or null). If any battery/power bank looks puffed or bulging, visible_damage MUST be "swollen battery".

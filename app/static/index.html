@@ -123,6 +123,7 @@
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
     .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 14px; }
+      .details-hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -166,7 +167,7 @@
           <select id="manual-select" onchange="handleManualSelect(this.value)" style="padding:6px 10px; border-radius:6px; border:1px solid var(--gray-border); font-size:13px;">
             <option value="">-- Select Class Manually --</option>
             <option value="smartphone">Smartphone</option>
-            <option value="laptop">Laptop</option>
+            <option value="laptop">Laptop</option><option value="tablet">Tablet</option>
             <option value="charger_adapter">Charger / Adapter</option>
             <option value="cable">Cable / Cord</option>
             <option value="battery_powerbank">Battery / Power Bank</option>
@@ -228,13 +229,15 @@
 
         <!-- Assessment / Valuation Outcome -->
         <div id="valuation-outcome" class="valuation-box">
+          <div id="next-step" style="font-size:24px;font-weight:800;padding:18px;border-radius:14px;margin-bottom:14px;text-align:center;"></div>
+          <button type="button" id="details-toggle" class="btn" style="background:white;color:var(--primary);border:1px solid var(--primary);width:100%;margin-bottom:12px;" onclick="toggleDetails()">See details ▾</button>
           
           <!-- Dropoff View -->
           <div id="outcome-dropoff" style="display:none;">
             <div class="val-banner">
               <div class="label">Inherent Mineral Value (Indicative Benchmark)</div>
               <div class="price" id="val-inr-range">₹380 – ₹590</div>
-              <div class="note" id="val-note">Indicative prices as of Oct 24, 2026. Recyclers recover part of this value (~30–40% voucher payout).</div>
+              <div class="note" id="val-note">Indicative prices as of Oct 24, 2026. Recyclers recover only part of this value.</div>
             </div>
 
             <h4 style="font-size:15px; font-weight:700; margin-bottom:10px;">Recoverable Metal Content (Estimated per Unit)</h4>
@@ -292,7 +295,7 @@
             <input type="file" accept="image/*" multiple hidden onchange="drawerScanFiles(this.files); this.value='';"></label>
           <select id="drawer-add-select" style="padding:10px;border-radius:8px;border:1px solid var(--gray-border);">
             <option value="">+ Add item manually…</option>
-            <option value="smartphone">Smartphone</option><option value="laptop">Laptop</option>
+            <option value="smartphone">Smartphone</option><option value="laptop">Laptop</option><option value="tablet">Tablet</option>
             <option value="charger_adapter">Charger / Adapter</option><option value="cable">Cable</option>
             <option value="battery_powerbank">Battery / Power Bank</option><option value="earphones_headphones">Earphones / Headphones</option>
             <option value="keyboard_mouse">Keyboard / Mouse</option><option value="pcb_board">PCB / Board</option>
@@ -368,7 +371,7 @@
           <label>Category</label>
           <select id="swap-category-input">
             <option value="smartphone">Smartphone</option>
-            <option value="laptop">Laptop</option>
+            <option value="laptop">Laptop</option><option value="tablet">Tablet</option>
             <option value="charger_adapter">Charger / Adapter</option>
             <option value="cable">Cable</option>
             <option value="battery_powerbank">Battery / Power Bank</option>
@@ -497,7 +500,7 @@
         hazard.style.display = 'none';
       }
 
-      const storesData = ['smartphone', 'laptop'].includes(currentScan.item_class);
+      const storesData = ['smartphone', 'laptop', 'tablet'].includes(currentScan.item_class);
       document.getElementById('wipe-question-row').style.display = storesData ? 'block' : 'none';
 
       const itemName = currentScan.item_class === 'unknown' ? 'this item' : 'this ' + currentScan.item_class.replace(/_/g, ' ');
@@ -526,6 +529,7 @@
         const outcomeBox = document.getElementById('valuation-outcome');
         outcomeBox.style.display = 'block';
 
+        showNextStep(assess);
         if (assess.action === 'swap') {
           document.getElementById('outcome-swap').style.display = 'block';
           let wipeNote = document.getElementById('swap-wipe-note');
@@ -726,7 +730,7 @@
     async function drawerAssess(item) {
       try {
         const res = await fetch('/api/assess', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ item_class: item.item_class, powers_on: item.powers_on, data_wiped: false }) });
+          body: JSON.stringify({ item_class: item.item_class, powers_on: item.powers_on, data_wiped: false, preview: true }) });
         const d = await res.json();
         const v = d.metal_value_inr || [0, 0];
         item.value_min = v[0] || 0; item.value_max = v[1] || 0; item.action = d.action || (item.powers_on ? 'swap' : 'dropoff');
@@ -854,6 +858,32 @@
       drawerSave(); drawerRender(); document.getElementById('drawer-status').textContent = `Imported ${lines.length} row(s).`;
     }
     drawerRender();
+
+    // One clear instruction first; metals, value and checklists sit behind "See details".
+    function showNextStep(assess) {
+      const box = document.getElementById('next-step');
+      let text, bg, fg;
+      if (currentScan.visible_damage && /swollen/i.test(currentScan.visible_damage)) {
+        text = '⚠️ Hand it in separately — swollen battery, do not bin it'; bg = '#fef2f2'; fg = '#b91c1c';
+      } else if (assess.action === 'swap') {
+        text = assess.wipe_before_swap ? '🔒 Wipe it, then post it on the swap board' : '🔄 It still works — post it on the swap board';
+        bg = '#eff6ff'; fg = '#1d4ed8';
+      } else {
+        text = (assess.wipe_checklist && assess.wipe_checklist.length) ? '🔒 Wipe your data, then put it in the e-waste bin' : '♻️ Put it in the e-waste bin';
+        bg = '#ecfdf5'; fg = '#047857';
+      }
+      box.innerText = text; box.style.background = bg; box.style.color = fg;
+      setDetailsVisible(false);
+    }
+    function setDetailsVisible(show) {
+      ['outcome-swap', 'outcome-dropoff'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('details-hidden', !show);
+      });
+      document.getElementById('details-toggle').innerText = show ? 'Hide details ▴' : 'See details ▾';
+      document.getElementById('details-toggle').dataset.open = show ? '1' : '';
+    }
+    function toggleDetails() { setDetailsVisible(!document.getElementById('details-toggle').dataset.open); }
   </script>
 </body>
 </html>

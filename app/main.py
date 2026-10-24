@@ -7,6 +7,7 @@ import os
 import json
 import time
 import uuid
+import hashlib
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, File, UploadFile, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
@@ -77,6 +78,7 @@ class AssessRequest(BaseModel):
     item_class: str
     powers_on: bool = False
     data_wiped: bool = False
+    preview: bool = False  # My Drawer valuations: don't count as real drop-offs/swaps
 
 
 class SwapListingCreate(BaseModel):
@@ -89,10 +91,34 @@ class SwapListingCreate(BaseModel):
     contact: str = Field(..., min_length=2, max_length=100)
 
 
+# Same photo -> same answer, instantly and without spending API quota.
+SCAN_CACHE_PATH = os.path.join(os.path.dirname(__file__), "data", "scan_cache.json")
+try:
+    with open(SCAN_CACHE_PATH) as f:
+        _scan_cache: Dict[str, Any] = json.load(f)
+except Exception:
+    _scan_cache = {}
+
+
+def cached_pile(contents: bytes) -> Dict[str, Any]:
+    key = hashlib.sha256(contents).hexdigest()
+    if key in _scan_cache:
+        return {**_scan_cache[key], "cached": True}
+    result = predict_pile(contents)
+    if result.get("items"):  # never cache failures
+        _scan_cache[key] = result
+        try:
+            with open(SCAN_CACHE_PATH, "w") as f:
+                json.dump(_scan_cache, f)
+        except Exception:
+            pass
+    return result
+
+
 @app.post("/api/scan_pile")
 async def scan_pile(file: UploadFile = File(...)) -> Dict[str, Any]:
     """One photo of many items -> list of detected items with counts."""
-    result = predict_pile(await file.read())
+    result = cached_pile(await file.read())
     update_stats(scan_inc=sum(i["count"] for i in result["items"]))
     return result
 
@@ -105,7 +131,7 @@ async def scan_item(file: UploadFile = File(...)) -> Dict[str, Any]:
         if not contents:
             raise HTTPException(status_code=400, detail="Empty file uploaded")
         # One AI call per photo: the pile scan also gives us the main item.
-        pile = predict_pile(contents)
+        pile = cached_pile(contents)
         items = pile.get("items", [])
         if items:
             main = max(items, key=lambda i: (i["item_class"] != "unknown", i["item_class"] in ("laptop", "smartphone")))
@@ -135,6 +161,8 @@ def assess_endpoint(req: AssessRequest) -> Dict[str, Any]:
     typical_weight_g = item_meta.get("typical_weight_g") or 100.0
     kg_added = round(typical_weight_g / 1000.0, 3)
 
+    if req.preview:
+        return assessment
     if assessment["action"] == "swap":
         update_stats(swap_inc=1, kg_inc=kg_added)
     else:

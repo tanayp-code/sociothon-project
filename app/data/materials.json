@@ -1,9 +1,18 @@
 {
   "smartphone": {
-    "gold_mg": [24, 36],
-    "silver_mg": [90, 250],
+    "gold_mg": [
+      24,
+      36
+    ],
+    "silver_mg": [
+      90,
+      250
+    ],
     "palladium_mg": 9,
-    "copper_g": [9, 15],
+    "copper_g": [
+      9,
+      15
+    ],
     "lithium_g": 1.1,
     "typical_weight_g": 160,
     "stores_data": true,
@@ -14,8 +23,14 @@
     "gold_mg": null,
     "silver_mg": null,
     "palladium_mg": null,
-    "copper_g": [200, 350],
-    "lithium_g": [8, 12],
+    "copper_g": [
+      200,
+      350
+    ],
+    "lithium_g": [
+      8,
+      12
+    ],
     "typical_weight_g": 2000,
     "stores_data": true,
     "source": "WEEE teardown averages, copper range estimated (gold/silver omitted per TEAM.md)",
@@ -25,7 +40,10 @@
     "gold_mg": null,
     "silver_mg": null,
     "palladium_mg": null,
-    "copper_g": [25, 45],
+    "copper_g": [
+      25,
+      45
+    ],
     "lithium_g": null,
     "typical_weight_g": 90,
     "stores_data": false,
@@ -36,7 +54,10 @@
     "gold_mg": null,
     "silver_mg": null,
     "palladium_mg": null,
-    "copper_g": [10, 25],
+    "copper_g": [
+      10,
+      25
+    ],
     "lithium_g": null,
     "typical_weight_g": 40,
     "stores_data": false,
@@ -47,8 +68,14 @@
     "gold_mg": null,
     "silver_mg": null,
     "palladium_mg": null,
-    "copper_g": [10, 20],
-    "lithium_g": [3.0, 5.0],
+    "copper_g": [
+      10,
+      20
+    ],
+    "lithium_g": [
+      3.0,
+      5.0
+    ],
     "typical_weight_g": 220,
     "stores_data": false,
     "source": "10k mAh Li-ion cell content (~0.3g Li/Ah) & wiring estimate",
@@ -58,7 +85,10 @@
     "gold_mg": null,
     "silver_mg": null,
     "palladium_mg": null,
-    "copper_g": [3, 8],
+    "copper_g": [
+      3,
+      8
+    ],
     "lithium_g": null,
     "typical_weight_g": 30,
     "stores_data": false,
@@ -69,7 +99,10 @@
     "gold_mg": null,
     "silver_mg": null,
     "palladium_mg": null,
-    "copper_g": [5, 15],
+    "copper_g": [
+      5,
+      15
+    ],
     "lithium_g": null,
     "typical_weight_g": 350,
     "stores_data": false,
@@ -80,7 +113,10 @@
     "gold_mg": null,
     "silver_mg": null,
     "palladium_mg": null,
-    "copper_g": [30, 80],
+    "copper_g": [
+      30,
+      80
+    ],
     "lithium_g": null,
     "typical_weight_g": 150,
     "stores_data": false,
@@ -97,5 +133,16 @@
     "stores_data": false,
     "source": null,
     "estimate": false
+  },
+  "tablet": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": null,
+    "lithium_g": null,
+    "typical_weight_g": 450,
+    "stores_data": true,
+    "source": "No verified per-tablet metal figures found; values left null rather than guessed. Weight is a typical estimate.",
+    "estimate": true
   }
 }

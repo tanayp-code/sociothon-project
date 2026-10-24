@@ -13,3 +13,4 @@ slides_assets/
 Circl-E.pptx
 Circl-E.pdf
 *.odp
+app/data/scan_cache.json
