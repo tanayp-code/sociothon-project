@@ -67,7 +67,56 @@ def calculate_metal_value(materials: Dict[str, Any], prices: Dict[str, Any]) -> 
     return (total_min, total_max)
 
 
-def assess_item(item_class: str, powers_on: bool, data_wiped: bool) -> Dict[str, Any]:
+# Total copper cross-section (mm²) by cable type — engineering estimates, shown to the user as assumptions.
+CABLE_COPPER_MM2 = {
+    "usb_data": (0.2, 0.5),
+    "power_cord": (1.5, 2.5),
+    "hdmi_video": (0.4, 0.8),
+    "audio": (0.1, 0.3),
+}
+COPPER_DENSITY_G_PER_CM3 = 8.96
+LITHIUM_G_PER_AH = 0.3  # rule of thumb for Li-ion cells (see claude_research.md)
+
+
+def _num(details: Dict[str, Any], key: str) -> Optional[float]:
+    try:
+        v = float(details.get(key))
+        return v if v > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def refine_materials(item_class: str, item_info: Dict[str, Any], details: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:
+    """Adjusts the generic per-item figures using what we know about this exact item."""
+    info = dict(item_info)
+    basis: List[str] = []
+    if item_class == "cable":
+        length = _num(details, "cable_length_m") or 1.0
+        ctype = details.get("cable_type") if details.get("cable_type") in CABLE_COPPER_MM2 else "usb_data"
+        lo, hi = CABLE_COPPER_MM2[ctype]
+        # mm² × m = cm³
+        info["copper_g"] = [round(length * lo * COPPER_DENSITY_G_PER_CM3, 1), round(length * hi * COPPER_DENSITY_G_PER_CM3, 1)]
+        basis.append(f"Copper = {length:g} m × {lo}–{hi} mm² ({ctype.replace('_', ' ')}) × 8.96 g/cm³"
+                     + ("" if _num(details, "cable_length_m") else " (length assumed 1 m)"))
+    mah = _num(details, "battery_mah")
+    if mah:
+        info["lithium_g"] = round(mah / 1000.0 * LITHIUM_G_PER_AH, 2)
+        basis.append(f"Lithium ≈ {mah:g} mAh × 0.3 g per Ah")
+    weight = _num(details, "weight_g")
+    typical = item_info.get("typical_weight_g")
+    if weight and typical and item_class != "cable":
+        ratio = max(0.3, min(3.0, weight / typical))
+        for k in ("gold_mg", "silver_mg", "palladium_mg", "copper_g"):
+            v = info.get(k)
+            if isinstance(v, list):
+                info[k] = [round(x * ratio, 1) for x in v]
+            elif isinstance(v, (int, float)):
+                info[k] = round(v * ratio, 1)
+        basis.append(f"Metals scaled by weight: {weight:g} g vs typical {typical:g} g (×{ratio:.2f})")
+    return info, basis
+
+
+def assess_item(item_class: str, powers_on: bool, data_wiped: bool, details: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Implements POST /api/assess contract from TEAM.md:
     returns item_class, action, materials, metal_value_inr, recovery_note,
@@ -79,6 +128,10 @@ def assess_item(item_class: str, powers_on: bool, data_wiped: bool) -> Dict[str,
 
     item_info = materials_catalog.get(item_class, materials_catalog.get("unknown", {}))
     stores_data = item_info.get("stores_data", False)
+    details = details or {}
+    item_info, estimate_basis = refine_materials(item_class, item_info, details)
+    if not estimate_basis:
+        estimate_basis = ["Generic figures for a typical " + item_class.replace("_", " ") + ". Add details for a sharper estimate."]
 
     # Action triage: swap if functional, dropoff if dead/scrap
     action = "swap" if powers_on else "dropoff"
@@ -134,6 +187,10 @@ def assess_item(item_class: str, powers_on: bool, data_wiped: bool) -> Dict[str,
         "is_indicative": prices_data.get("is_indicative", True),
         "wipe_checklist": wipe_checklist,
         "wipe_before_swap": wipe_before_swap,
+        "estimate_precision": "refined" if any(details.get(k) for k in ("weight_g", "battery_mah", "cable_length_m", "cable_type")) else "generic",
+        "estimate_basis": estimate_basis,
+        "brand": details.get("brand"),
+        "model": details.get("model"),
         "nearest_dropoff": nearest_dropoff,
         "sources": sources,
     }

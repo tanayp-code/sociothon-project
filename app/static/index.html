@@ -124,6 +124,7 @@
     .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
     .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 14px; }
       .details-hidden { display: none !important; }
+      .d-input { display:block; width:100%; padding:8px; margin-top:4px; border:1px solid var(--gray-border); border-radius:8px; font-size:14px; box-sizing:border-box; }
   </style>
 </head>
 <body>
@@ -222,6 +223,23 @@
               </div>
             </div>
 
+            <details id="item-details" style="margin:12px 0;border:1px solid var(--gray-border);border-radius:10px;padding:10px 14px;">
+              <summary style="cursor:pointer;font-weight:600;">3. Item details (optional, for a sharper estimate)</summary>
+              <p id="details-hint" style="font-size:13px;color:var(--gray-text);margin:8px 0;"></p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">
+                <label style="font-size:13px;">Brand<input id="d-brand" type="text" placeholder="e.g. Samsung" class="d-input"></label>
+                <label style="font-size:13px;">Model<input id="d-model" type="text" placeholder="e.g. Galaxy M31" class="d-input"></label>
+                <label class="d-field" data-for="device" style="font-size:13px;">Weight (g)<input id="d-weight" type="number" min="0" class="d-input"></label>
+                <label class="d-field" data-for="battery" style="font-size:13px;">Battery (mAh)<input id="d-mah" type="number" min="0" class="d-input"></label>
+                <label class="d-field" data-for="cable" style="font-size:13px;">Cable length (m)<input id="d-length" type="number" min="0" step="0.1" class="d-input"></label>
+                <label class="d-field" data-for="cable" style="font-size:13px;">Cable type
+                  <select id="d-ctype" class="d-input">
+                    <option value="">Not sure</option><option value="usb_data">USB / charging</option>
+                    <option value="power_cord">Power cord (thick)</option><option value="hdmi_video">HDMI / video</option><option value="audio">Audio / aux</option>
+                  </select></label>
+              </div>
+            </details>
+
             <button class="btn btn-block" onclick="runAssessment()">Calculate Value & Next Step →</button>
           </div>
         </div>
@@ -236,6 +254,7 @@
             <div class="val-banner">
               <div class="label">Inherent Mineral Value (Indicative Benchmark)</div>
               <div class="price" id="val-inr-range">₹380 – ₹590</div>
+              <div class="note" id="val-basis" style="margin-top:6px;"></div>
               <div class="note" id="val-note">Indicative prices as of Oct 24, 2026. Recyclers recover only part of this value.</div>
             </div>
 
@@ -507,6 +526,7 @@
         ? `1. Is ${itemName} still usable (not damaged)?` : `1. Does ${itemName} still turn on / work?`;
       setPowerState(false);
       setWipeState(false);
+      fillItemDetails(data);
 
       document.getElementById('scan-result').style.display = 'block';
       document.getElementById('valuation-outcome').style.display = 'none';
@@ -520,7 +540,8 @@
           body: JSON.stringify({
             item_class: currentScan.item_class,
             powers_on: currentScan.powers_on,
-            data_wiped: currentScan.data_wiped
+            data_wiped: currentScan.data_wiped,
+            details: readItemDetails()
           })
         });
         const assess = await res.json();
@@ -547,6 +568,9 @@
           const [minV, maxV] = assess.metal_value_inr || [0, 0];
           document.getElementById('val-inr-range').innerText = `₹${minV} – ₹${maxV}`;
           document.getElementById('val-note').innerText = assess.recovery_note || 'Recyclers recover part of this value.';
+          const who = [assess.brand, assess.model].filter(Boolean).join(' ');
+          document.getElementById('val-basis').innerText = (assess.estimate_precision === 'refined' ? 'Refined estimate' : 'Generic estimate')
+            + (who ? ` for ${who}` : '') + ': ' + (assess.estimate_basis || []).join(' · ');
 
           // Render Materials Grid
           const matContainer = document.getElementById('materials-container');
@@ -883,6 +907,34 @@
       document.getElementById('details-toggle').dataset.open = show ? '1' : '';
     }
     function toggleDetails() { setDetailsVisible(!document.getElementById('details-toggle').dataset.open); }
+
+    // Item details: prefilled from what the AI recognised, editable by the user.
+    function fillItemDetails(data) {
+      const specs = data.specs || {};
+      const set = (id, v) => { document.getElementById(id).value = v ?? ''; };
+      set('d-brand', data.brand); set('d-model', data.model);
+      set('d-weight', specs.weight_g); set('d-mah', specs.battery_mah);
+      set('d-length', specs.cable_length_m); set('d-ctype', specs.cable_type || '');
+      const c = currentScan.item_class;
+      const show = { cable: c === 'cable', battery: ['battery_powerbank', 'smartphone', 'laptop', 'tablet'].includes(c),
+                     device: !['cable', 'unknown'].includes(c) };
+      document.querySelectorAll('.d-field').forEach(el => { el.hidden = !show[el.dataset.for]; });
+      const found = [data.brand, data.model].filter(Boolean).join(' ');
+      document.getElementById('details-hint').innerText = found
+        ? `AI thinks this is a ${found}. Check the numbers or correct them.`
+        : 'AI could not tell the exact model. Any numbers below are its rough guesses; correct what you know.';
+      document.getElementById('item-details').open = !!found;
+    }
+    function readItemDetails() {
+      const fields = { brand: 'd-brand', model: 'd-model', weight_g: 'd-weight', battery_mah: 'd-mah',
+                       cable_length_m: 'd-length', cable_type: 'd-ctype' };
+      const d = {};
+      for (const [key, id] of Object.entries(fields)) {
+        const el = document.getElementById(id);
+        if (el.value.trim() && !el.closest('[hidden]')) d[key] = el.value.trim();  // skip empty / not-applicable fields
+      }
+      return d;
+    }
   </script>
 </body>
 </html>

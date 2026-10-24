@@ -78,6 +78,7 @@ class AssessRequest(BaseModel):
     item_class: str
     powers_on: bool = False
     data_wiped: bool = False
+    details: Optional[Dict[str, Any]] = None  # brand, model, weight_g, battery_mah, cable_length_m, cable_type
     preview: bool = False  # My Drawer valuations: don't count as real drop-offs/swaps
 
 
@@ -137,7 +138,8 @@ async def scan_item(file: UploadFile = File(...)) -> Dict[str, Any]:
             main = max(items, key=lambda i: (i["item_class"] != "unknown", i["item_class"] in ("laptop", "smartphone")))
             result = {"item_class": main["item_class"], "confidence": 0.9, "top3": [[main["item_class"], 0.9]],
                       "visible_damage": main.get("visible_damage"), "description": main.get("description", ""),
-                      "provider": pile.get("provider"), "items": items}
+                      "provider": pile.get("provider"), "items": items,
+                      "brand": main.get("brand"), "model": main.get("model"), "specs": main.get("specs", {})}
             if any(i.get("safety_warning") for i in items):
                 result["safety_warning"] = next(i["safety_warning"] for i in items if i.get("safety_warning"))
         else:
@@ -153,7 +155,7 @@ async def scan_item(file: UploadFile = File(...)) -> Dict[str, Any]:
 @app.post("/api/assess")
 def assess_endpoint(req: AssessRequest) -> Dict[str, Any]:
     """Assesses item value, wipe checklist, and dropoff/swap action."""
-    assessment = assess_item(req.item_class, req.powers_on, req.data_wiped)
+    assessment = assess_item(req.item_class, req.powers_on, req.data_wiped, req.details)
 
     # Estimate diverted kg based on typical weights
     materials = load_json("materials.json")

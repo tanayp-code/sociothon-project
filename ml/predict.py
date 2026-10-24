@@ -330,7 +330,13 @@ Group identical items and give a count. Note visible damage per group ("cracked 
 "frayed wire", ... or null). If any battery/power bank looks puffed or bulging, visible_damage MUST be "swollen battery".
 Ignore non-electronic objects (bed, table, hands, paper).
 
-Return JSON: {"items": [{"item_class": "...", "count": 1, "visible_damage": null, "description": "max 8 words"}]}
+For each group also report, ONLY if visible or reliably known for that exact model (else null):
+- brand, model (e.g. "Apple", "iPhone 11")
+- specs: weight_g (typical weight of that model), battery_mah, cable_length_m, cable_type
+  (one of "usb_data", "power_cord", "hdmi_video", "audio")
+
+Return JSON: {"items": [{"item_class": "...", "count": 1, "visible_damage": null, "description": "max 8 words",
+  "brand": null, "model": null, "specs": {"weight_g": null, "battery_mah": null, "cable_length_m": null, "cable_type": null}}]}
 """
 
 
@@ -365,8 +371,21 @@ def predict_pile(image_bytes: bytes) -> Dict[str, Any]:
         damage = it.get("visible_damage")
         if damage and str(damage).lower() in ("null", "none"):
             damage = None
+        raw_specs = it.get("specs") if isinstance(it.get("specs"), dict) else {}
+        specs: Dict[str, Any] = {}
+        for k in ("weight_g", "battery_mah", "cable_length_m"):
+            try:
+                v = float(raw_specs.get(k))
+                if v > 0:
+                    specs[k] = v
+            except (TypeError, ValueError):
+                pass
+        if raw_specs.get("cable_type") in ("usb_data", "power_cord", "hdmi_video", "audio"):
+            specs["cable_type"] = raw_specs["cable_type"]
+        clean = lambda v: str(v).strip()[:40] if v and str(v).lower() not in ("null", "none", "unknown") else None
         entry = {"item_class": cls, "count": count, "visible_damage": damage,
-                 "description": str(it.get("description", ""))[:60]}
+                 "description": str(it.get("description", ""))[:60],
+                 "brand": clean(it.get("brand")), "model": clean(it.get("model")), "specs": specs}
         if damage and "swollen" in str(damage).lower():
             entry["safety_warning"] = "Swollen battery: fire risk. Do not bin; hand in separately."
         items.append(entry)
