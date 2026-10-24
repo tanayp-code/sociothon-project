@@ -1,0 +1,68 @@
+[
+  {
+    "id": "swap-7aaa787a",
+    "title": "Arduino Uno R3 Clone",
+    "category": "pcb_board",
+    "condition": "Tested working",
+    "powers_on": true,
+    "description": "Working microcontroller board with USB cable",
+    "price_inr": 150,
+    "contact": "SAC Rm 102",
+    "posted_at": "2026-10-24T07:39:12Z"
+  },
+  {
+    "id": "swap-101",
+    "title": "Apple 20W USB-C Power Adapter",
+    "category": "charger_adapter",
+    "condition": "Used - fully functional",
+    "powers_on": true,
+    "description": "Original Apple adapter. Minor casing scuffs but delivers fast charging without issues.",
+    "price_inr": 200,
+    "contact": "Hostel Govind Bhawan Rm 214",
+    "posted_at": "2026-10-24T09:15:00Z"
+  },
+  {
+    "id": "swap-102",
+    "title": "Logitech B100 Optical Mouse (Wired USB)",
+    "category": "keyboard_mouse",
+    "condition": "Good condition",
+    "powers_on": true,
+    "description": "Clean optical mouse. Left/right click and scroll wheel smooth. Great for lab work.",
+    "price_inr": 100,
+    "contact": "Rajendra Bhawan Rm 105",
+    "posted_at": "2026-10-24T10:30:00Z"
+  },
+  {
+    "id": "swap-103",
+    "title": "2x Salvaged 18650 Li-ion Cells (Tested 3.9V)",
+    "category": "battery_powerbank",
+    "condition": "Tested salvage - robotics project ready",
+    "powers_on": true,
+    "description": "Salvaged from an unswollen old laptop pack. Multimeter tested at 3.9V. Ideal for Robocon or semester projects.",
+    "price_inr": 0,
+    "contact": "Robotics Club SAC / Cautley Bhawan",
+    "posted_at": "2026-10-24T11:00:00Z"
+  },
+  {
+    "id": "swap-104",
+    "title": "Dell 65W Original Laptop Charger (Round Tip)",
+    "category": "charger_adapter",
+    "condition": "Tested & working",
+    "powers_on": true,
+    "description": "Works with Inspiron/Latitude series. Upgraded laptop to USB-C so no longer needed.",
+    "price_inr": 250,
+    "contact": "Sarojini Bhawan Rm 312",
+    "posted_at": "2026-10-24T11:45:00Z"
+  },
+  {
+    "id": "swap-105",
+    "title": "Anker Braided USB-C to USB-C Cable (2m)",
+    "category": "cable",
+    "condition": "Excellent",
+    "powers_on": true,
+    "description": "Red nylon braided 60W power delivery cable. No frays or damage.",
+    "price_inr": 80,
+    "contact": "Radhakrishnan Bhawan Rm 402",
+    "posted_at": "2026-10-24T12:10:00Z"
+  }
+]

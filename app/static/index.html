@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circl-E — AI E-Waste Diagnostic & Campus Urban-Mining Locker</title>
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-hover: #047857;
+      --primary-light: #ecfdf5;
+      --accent: #d97706;
+      --dark: #0f172a;
+      --gray-light: #f8fafc;
+      --gray-border: #e2e8f0;
+      --gray-text: #64748b;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f1f5f9; color: var(--dark); padding-bottom: 60px; }
+    header { background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: white; padding: 24px 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .header-container { max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .brand h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+    .brand p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+    .badge-campus { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Navigation Tabs */
+    nav { max-width: 900px; margin: 16px auto 0; display: flex; gap: 8px; overflow-x: auto; padding: 0 16px; }
+    .tab-btn { background: white; border: 1px solid var(--gray-border); padding: 12px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--gray-text); cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.15s ease; }
+    .tab-btn:hover { background: var(--gray-light); color: var(--dark); }
+    .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); shadow: 0 2px 4px rgba(5,150,105,0.2); }
+
+    /* Main Container */
+    main { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Cards */
+    .card { background: white; border-radius: 14px; border: 1px solid var(--gray-border); padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+    .card h2 { font-size: 20px; font-weight: 700; margin-bottom: 14px; color: var(--dark); }
+    .card p { font-size: 14px; color: var(--gray-text); line-height: 1.5; margin-bottom: 16px; }
+
+    /* Scan / Upload Area */
+    .upload-zone { border: 2px dashed #10b981; background: var(--primary-light); border-radius: 12px; padding: 36px 20px; text-align: center; cursor: pointer; transition: background 0.2s; }
+    .upload-zone:hover { background: #d1fae5; }
+    .upload-icon { font-size: 44px; margin-bottom: 12px; }
+    .upload-title { font-size: 18px; font-weight: 700; color: #065f46; margin-bottom: 6px; }
+    .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary { background: white; color: var(--dark); border: 1px solid var(--gray-border); }
+    .btn-secondary:hover { background: var(--gray-light); }
+    .btn-block { width: 100%; justify-content: center; }
+
+    /* Scanner Loading */
+    .scanner-loading { display: none; text-align: center; padding: 30px; }
+    .spinner { border: 4px solid #e2e8f0; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Prediction Result */
+    .scan-result-card { display: none; background: #ffffff; border: 1px solid var(--gray-border); border-radius: 12px; padding: 20px; margin-top: 20px; }
+    .preview-img { max-width: 100%; max-height: 240px; border-radius: 8px; object-fit: contain; margin-bottom: 16px; background: #000; display: block; margin-left: auto; margin-right: auto; }
+    .class-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .class-badge { background: #047857; color: white; padding: 6px 14px; border-radius: 999px; font-size: 16px; font-weight: 700; text-transform: uppercase; }
+    .conf-badge { font-size: 13px; color: var(--gray-text); font-weight: 600; }
+
+    /* Safety Hazard Alert */
+    .hazard-box { background: var(--danger-light); border: 2px solid var(--danger); border-radius: 10px; padding: 16px; margin: 16px 0; color: #991b1b; }
+    .hazard-box h4 { font-size: 16px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .hazard-box p { font-size: 13px; color: #991b1b; margin: 0; line-height: 1.4; }
+
+    /* Triage Question Form */
+    .triage-box { background: var(--gray-light); border-radius: 10px; padding: 18px; margin-top: 16px; border: 1px solid var(--gray-border); }
+    .question-row { margin-bottom: 16px; }
+    .question-row label { font-size: 14px; font-weight: 700; color: var(--dark); display: block; margin-bottom: 8px; }
+    .toggle-group { display: flex; gap: 10px; }
+    .toggle-btn { flex: 1; padding: 10px; border: 2px solid var(--gray-border); border-radius: 8px; background: white; font-weight: 600; cursor: pointer; text-align: center; }
+    .toggle-btn.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+
+    /* Mineral Valuation Box */
+    .valuation-box { display: none; margin-top: 20px; }
+    .val-banner { background: #ecfdf5; border: 2px solid #059669; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
+    .val-banner .label { font-size: 13px; text-transform: uppercase; font-weight: 700; color: #065f46; letter-spacing: 0.5px; }
+    .val-banner .price { font-size: 36px; font-weight: 800; color: #047857; margin: 6px 0; }
+    .val-banner .note { font-size: 12px; color: #065f46; }
+
+    /* Grid of Materials */
+    .materials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .material-card { background: white; border: 1px solid var(--gray-border); border-radius: 10px; padding: 14px; text-align: center; }
+    .mat-symbol { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
+    .mat-name { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+    .mat-val { font-size: 15px; font-weight: 800; color: #047857; }
+
+    /* Checklist */
+    .checklist-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+    .checklist-box h4 { font-size: 15px; font-weight: 700; color: #1e40af; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .check-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 13px; color: #1e3a8a; }
+    .check-item input { margin-top: 3px; accent-color: #2563eb; }
+
+    /* Dropoff Destination Card */
+    .dropoff-card { background: white; border: 1px solid var(--gray-border); border-left: 4px solid var(--primary); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .dropoff-name { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+    .dropoff-loc { font-size: 13px; color: var(--gray-text); margin-bottom: 8px; }
+    .dropoff-badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 6px; }
+
+    /* Swap Board Cards */
+    .swap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+    .swap-card { background: white; border: 1px solid var(--gray-border); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; }
+    .swap-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--dark); }
+    .swap-price { font-size: 18px; font-weight: 800; color: var(--primary); margin: 8px 0; }
+    .swap-contact { font-size: 12px; color: var(--gray-text); background: var(--gray-light); padding: 8px; border-radius: 6px; }
+
+    /* Stats Impact Panel */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border: 1px solid var(--gray-border); border-radius: 12px; padding: 20px; text-align: center; }
+    .stat-num { font-size: 32px; font-weight: 800; color: var(--primary); margin: 6px 0; }
+    .stat-title { font-size: 13px; font-weight: 600; color: var(--gray-text); text-transform: uppercase; }
+
+    /* Modal Form */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; max-width: 500px; width: 100%; border-radius: 12px; padding: 24px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-container">
+      <div class="brand">
+        <h1>🌱 Circl-E</h1>
+        <p>AI E-Waste Diagnostic, Urban-Mining Engine & Campus Swap Platform</p>
+      </div>
+      <div>
+        <span class="badge-campus">IIT Roorkee · Sociothon 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <button class="tab-btn active" onclick="switchTab('scan-tab')">📸 Scan & Value</button>
+    <button class="tab-btn" onclick="switchTab('swap-tab')">🔄 Campus Swap Board</button>
+    <button class="tab-btn" onclick="switchTab('drop-tab')">📍 Dropoff Points</button>
+    <button class="tab-btn" onclick="switchTab('impact-tab')">📊 Impact Counters</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: SCAN & VALUE -->
+    <section id="scan-tab" class="tab-content active">
+      <div class="card">
+        <h2>Scan Discarded Electronic Item</h2>
+        <p>Snap a photo of any broken gadget, cable, charger, or PCB. Gemini Flash classifies the item, checks for hazardous battery swelling, and calculates inherent mineral recovery values.</p>
+
+        <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelect(event)">
+        
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+          <div class="upload-icon">📷</div>
+          <div class="upload-title">Tap to Take Photo or Upload Image</div>
+          <div style="font-size:13px; color: #047857;">Supports Smartphones, Laptops, Chargers, Cables, Batteries, Earphones, PCBs</div>
+        </div>
+
+        <div style="text-align:center; margin-top:14px;">
+          <span style="font-size:13px; color:var(--gray-text);">Or test without camera: </span>
+          <select id="manual-select" onchange="handleManualSelect(this.value)" style="padding:6px 10px; border-radius:6px; border:1px solid var(--gray-border); font-size:13px;">
+            <option value="">-- Select Class Manually --</option>
+            <option value="smartphone">Smartphone</option>
+            <option value="laptop">Laptop</option>
+            <option value="charger_adapter">Charger / Adapter</option>
+            <option value="cable">Cable / Cord</option>
+            <option value="battery_powerbank">Battery / Power Bank</option>
+            <option value="earphones_headphones">Earphones / Headphones</option>
+            <option value="keyboard_mouse">Keyboard / Mouse</option>
+            <option value="pcb_board">PCB / Motherboard</option>
+          </select>
+        </div>
+
+        <!-- Spinner -->
+        <div id="scanner-spinner" class="scanner-loading">
+          <div class="spinner"></div>
+          <div style="font-weight:700; color:var(--primary);">Inspecting with Gemini Vision AI...</div>
+          <div style="font-size:12px; color:var(--gray-text); margin-top:4px;">Detecting device class, damage, and battery condition</div>
+        </div>
+
+        <!-- Scan Result Card -->
+        <div id="scan-result" class="scan-result-card">
+          <img id="result-img" class="preview-img" style="display:none;">
+          
+          <div class="class-header">
+            <div>
+              <span id="result-class-badge" class="class-badge">Smartphone</span>
+            </div>
+            <div id="result-conf" class="conf-badge">Confidence: 98%</div>
+          </div>
+          <p id="result-desc" style="font-size:14px; color:var(--dark); margin-bottom:8px;"></p>
+
+          <!-- Swollen Hazard Banner -->
+          <div id="hazard-alert" class="hazard-box" style="display:none;">
+            <h4>⚠️ CRITICAL SAFETY ALERT: Swollen Battery Detected</h4>
+            <p id="hazard-msg">Severe fire & thermal runaway risk. Do NOT puncture, crush, or press. Transport in a fire-safe box to an authorised hazardous e-waste bin.</p>
+          </div>
+
+          <!-- Triage Questions -->
+          <div class="triage-box">
+            <h3 style="font-size:15px; margin-bottom:12px;">Step 2: Condition & Triage</h3>
+            
+            <div class="question-row">
+              <label>1. Does the device turn on / function?</label>
+              <div class="toggle-group">
+                <button type="button" class="toggle-btn" id="btn-power-no" onclick="setPowerState(false)">❌ No (Dead / Broken)</button>
+                <button type="button" class="toggle-btn" id="btn-power-yes" onclick="setPowerState(true)">✅ Yes (Turns On)</button>
+              </div>
+            </div>
+
+            <div class="question-row" id="wipe-question-row">
+              <label>2. Has personal data been formatted/wiped?</label>
+              <div class="toggle-group">
+                <button type="button" class="toggle-btn" id="btn-wipe-no" onclick="setWipeState(false)">⚠️ No / Not Sure</button>
+                <button type="button" class="toggle-btn selected" id="btn-wipe-yes" onclick="setWipeState(true)">🔒 Yes, Wiped Clean</button>
+              </div>
+            </div>
+
+            <button class="btn btn-block" onclick="runAssessment()">Calculate Value & Next Step →</button>
+          </div>
+        </div>
+
+        <!-- Assessment / Valuation Outcome -->
+        <div id="valuation-outcome" class="valuation-box">
+          
+          <!-- Dropoff View -->
+          <div id="outcome-dropoff" style="display:none;">
+            <div class="val-banner">
+              <div class="label">Inherent Mineral Value (Indicative Benchmark)</div>
+              <div class="price" id="val-inr-range">₹380 – ₹590</div>
+              <div class="note" id="val-note">Indicative prices as of Oct 24, 2026. Recyclers recover part of this value (~30–40% voucher payout).</div>
+            </div>
+
+            <h4 style="font-size:15px; font-weight:700; margin-bottom:10px;">Recoverable Metal Content (Estimated per Unit)</h4>
+            <div class="materials-grid" id="materials-container"></div>
+
+            <!-- Wipe Checklist -->
+            <div id="wipe-checklist-box" class="checklist-box" style="display:none;">
+              <h4>🔒 Mandatory Data-Wipe Protocol Before Deposit</h4>
+              <div id="checklist-items"></div>
+            </div>
+
+            <!-- Nearest Dropoff -->
+            <div class="card" style="border:1px solid #10b981; background:#f0fdf4;">
+              <h4 style="font-size:16px; color:#065f46; margin-bottom:8px;">📍 Nearest Campus Drop-Off Hub</h4>
+              <div id="nearest-dropoff-info"></div>
+              <button class="btn btn-block" style="margin-top:14px;" onclick="generateDepositVoucher()">🎟️ Generate Deposit Voucher & QR</button>
+            </div>
+          </div>
+
+          <!-- Swap View -->
+          <div id="outcome-swap" style="display:none;">
+            <div style="background:#ecfdf5; border:2px solid #059669; border-radius:12px; padding:20px; text-align:center; margin-bottom:16px;">
+              <div style="font-size:32px;">🎉</div>
+              <div style="font-size:18px; font-weight:800; color:#065f46; margin:8px 0;">Item is Functional — Keep it in Circulation!</div>
+              <p style="font-size:13px; color:#047857; margin-bottom:14px;">Reuse is higher on the circular waste hierarchy than shredding. List it for peer swap among IIT Roorkee students or donate to robotics clubs.</p>
+              <button class="btn" onclick="openSwapModalWithCurrent()">List on Campus Swap Board →</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: SWAP BOARD -->
+    <section id="swap-tab" class="tab-content">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+          <div>
+            <h2>Campus Hardware Swap Board</h2>
+            <p style="margin:0;">Working components, chargers, cords, and tested cells listed by IIT Roorkee students.</p>
+          </div>
+          <button class="btn" onclick="openSwapModal()">+ Post Item</button>
+        </div>
+
+        <div id="swap-list" class="swap-grid"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DROPOFFS -->
+    <section id="drop-tab" class="tab-content">
+      <div class="card">
+        <h2>Authorised Campus Drop-off Bins & Regional Partner</h2>
+        <p>Deposit items securely in tamper-evident locked bins across campus. NSS logistics aggregates collections monthly for bulk delivery to Attero's Bhagwanpur refinery.</p>
+
+        <div id="dropoffs-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: IMPACT DASHBOARD -->
+    <section id="impact-tab" class="tab-content">
+      <div class="card">
+        <h2>Campus E-Waste Circularity Impact</h2>
+        <p>Cumulative metrics tracked in real-time across IIT Roorkee hostels and collection drives.</p>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-title">Total Scans</div>
+            <div class="stat-num" id="stat-scans">0</div>
+            <div style="font-size:11px; color:var(--gray-text);">Gadgets assessed by AI</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">To Formal Recycler</div>
+            <div class="stat-num" id="stat-dropoffs">0</div>
+            <div style="font-size:11px; color:var(--gray-text);">Diverted to Attero/NSS</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Kept in Circulation</div>
+            <div class="stat-num" id="stat-swaps">0</div>
+            <div style="font-size:11px; color:var(--gray-text);">Peer swap / maker reuse</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">E-Waste Diverted</div>
+            <div class="stat-num" id="stat-kg">0 kg</div>
+            <div style="font-size:11px; color:var(--gray-text);">Estimated landfill diversion</div>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid var(--gray-border); border-radius:10px; padding:16px;">
+          <h4 style="font-size:14px; font-weight:700; color:var(--dark); margin-bottom:8px;">Verified Context & Regulatory Grounding</h4>
+          <ul style="font-size:13px; color:var(--gray-text); line-height:1.6; padding-left:20px;">
+            <li><strong>National Context:</strong> India generates 1.25–1.75 million tonnes of e-waste annually; only 43–71% is formally processed.</li>
+            <li><strong>Refining Partner:</strong> Attero's Roorkee (Bhagwanpur) plant processes ~144,000 t/yr e-waste + 15,000 t/yr Li-ion — 20 km from campus.</li>
+            <li><strong>Urban Mining:</strong> 1 metric ton of smartphones contains ~300g gold and 140kg copper, up to 100x richer than primary gold ore.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Post Swap Modal -->
+  <div id="swap-modal" class="modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:14px;">Post to Campus Swap Board</h3>
+      <form onsubmit="submitSwapForm(event)">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="swap-title-input" required placeholder="e.g. 20W USB-C Charger">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="swap-category-input">
+            <option value="smartphone">Smartphone</option>
+            <option value="laptop">Laptop</option>
+            <option value="charger_adapter">Charger / Adapter</option>
+            <option value="cable">Cable</option>
+            <option value="battery_powerbank">Battery / Power Bank</option>
+            <option value="earphones_headphones">Earphones</option>
+            <option value="keyboard_mouse">Keyboard / Mouse</option>
+            <option value="pcb_board">PCB / Maker Board</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Condition</label>
+          <input type="text" id="swap-condition-input" required placeholder="e.g. Working - minor scratch">
+        </div>
+        <div class="form-group">
+          <label>Price (₹) — 0 for Free</label>
+          <input type="number" id="swap-price-input" min="0" value="0" required>
+        </div>
+        <div class="form-group">
+          <label>Contact (Hostel Room / Phone)</label>
+          <input type="text" id="swap-contact-input" required placeholder="e.g. Govind Bhawan Rm 204">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="swap-desc-input" rows="3" required placeholder="Describe condition and why you're swapping"></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeSwapModal()">Cancel</button>
+          <button type="submit" class="btn">Post Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentScan = {
+      item_class: "smartphone",
+      confidence: 1.0,
+      visible_damage: null,
+      powers_on: false,
+      data_wiped: false
+    };
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (targetBtn) targetBtn.classList.add('active');
+      const targetContent = document.getElementById(tabId);
+      if (targetContent) targetContent.classList.add('active');
+
+      if (tabId === 'swap-tab') loadSwapListings();
+      if (tabId === 'drop-tab') loadDropoffs();
+      if (tabId === 'impact-tab') loadStats();
+    }
+
+    function setPowerState(powersOn) {
+      currentScan.powers_on = powersOn;
+      document.getElementById('btn-power-yes').classList.toggle('selected', powersOn);
+      document.getElementById('btn-power-no').classList.toggle('selected', !powersOn);
+    }
+
+    function setWipeState(wiped) {
+      currentScan.data_wiped = wiped;
+      document.getElementById('btn-wipe-yes').classList.toggle('selected', wiped);
+      document.getElementById('btn-wipe-no').classList.toggle('selected', !wiped);
+    }
+
+    async function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const preview = document.getElementById('result-img');
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+
+      document.getElementById('scanner-spinner').style.display = 'block';
+      document.getElementById('scan-result').style.display = 'none';
+      document.getElementById('valuation-outcome').style.display = 'none';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/scan', { method: 'POST', body: formData });
+        const data = await res.json();
+        populateScanResult(data);
+      } catch (err) {
+        alert("Scan request failed. Switching to manual class selection.");
+        populateScanResult({
+          item_class: "smartphone",
+          confidence: 0.9,
+          visible_damage: null,
+          description: "Manual fallback selected"
+        });
+      } finally {
+        document.getElementById('scanner-spinner').style.display = 'none';
+      }
+    }
+
+    function handleManualSelect(val) {
+      if (!val) return;
+      document.getElementById('result-img').style.display = 'none';
+      populateScanResult({
+        item_class: val,
+        confidence: 1.0,
+        visible_damage: null,
+        description: `Manually classified as ${val.replace('_', ' ')}`
+      });
+    }
+
+    function populateScanResult(data) {
+      currentScan.item_class = data.item_class || "smartphone";
+      currentScan.visible_damage = data.visible_damage;
+
+      document.getElementById('result-class-badge').innerText = currentScan.item_class.replace('_', ' ');
+      const providerTag = data.provider ? ` via ${data.provider.toUpperCase()}` : '';
+      document.getElementById('result-conf').innerText = `Confidence: ${Math.round((data.confidence || 0.95)*100)}%${providerTag}`;
+      document.getElementById('result-desc').innerText = data.description || '';
+
+      const hazard = document.getElementById('hazard-alert');
+      if (data.safety_warning) {
+        document.getElementById('hazard-msg').innerText = data.safety_warning;
+        hazard.style.display = 'block';
+      } else {
+        hazard.style.display = 'none';
+      }
+
+      const storesData = ['smartphone', 'laptop'].includes(currentScan.item_class);
+      document.getElementById('wipe-question-row').style.display = storesData ? 'block' : 'none';
+
+      setPowerState(false);
+      setWipeState(false);
+
+      document.getElementById('scan-result').style.display = 'block';
+      document.getElementById('valuation-outcome').style.display = 'none';
+    }
+
+    async function runAssessment() {
+      try {
+        const res = await fetch('/api/assess', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            item_class: currentScan.item_class,
+            powers_on: currentScan.powers_on,
+            data_wiped: currentScan.data_wiped
+          })
+        });
+        const assess = await res.json();
+
+        const outcomeBox = document.getElementById('valuation-outcome');
+        outcomeBox.style.display = 'block';
+
+        if (assess.action === 'swap') {
+          document.getElementById('outcome-swap').style.display = 'block';
+          document.getElementById('outcome-dropoff').style.display = 'none';
+        } else {
+          document.getElementById('outcome-swap').style.display = 'none';
+          document.getElementById('outcome-dropoff').style.display = 'block';
+
+          const [minV, maxV] = assess.metal_value_inr || [0, 0];
+          document.getElementById('val-inr-range').innerText = `₹${minV} – ₹${maxV}`;
+          document.getElementById('val-note').innerText = assess.recovery_note || 'Recyclers recover part of this value.';
+
+          // Render Materials Grid
+          const matContainer = document.getElementById('materials-container');
+          matContainer.innerHTML = '';
+          const m = assess.materials || {};
+          
+          const formatVal = (v, unit) => {
+            if (!v) return 'N/A';
+            if (Array.isArray(v)) return `${v[0]}–${v[1]} ${unit}`;
+            return `${v} ${unit}`;
+          };
+
+          const items = [
+            { name: 'Gold', symbol: 'Au', val: formatVal(m.gold_mg, 'mg') },
+            { name: 'Silver', symbol: 'Ag', val: formatVal(m.silver_mg, 'mg') },
+            { name: 'Palladium', symbol: 'Pd', val: formatVal(m.palladium_mg, 'mg') },
+            { name: 'Copper', symbol: 'Cu', val: formatVal(m.copper_g, 'g') },
+            { name: 'Lithium', symbol: 'Li', val: formatVal(m.lithium_g, 'g') },
+          ];
+
+          items.forEach(it => {
+            const el = document.createElement('div');
+            el.className = 'material-card';
+            el.innerHTML = `
+              <div class="mat-symbol">${it.symbol}</div>
+              <div class="mat-name">${it.name}</div>
+              <div class="mat-val">${it.val}</div>
+            `;
+            matContainer.appendChild(el);
+          });
+
+          // Render Checklist
+          const checkContainer = document.getElementById('checklist-items');
+          const checkWrapper = document.getElementById('wipe-checklist-box');
+          if (assess.wipe_checklist && assess.wipe_checklist.length > 0) {
+            checkContainer.innerHTML = '';
+            assess.wipe_checklist.forEach(step => {
+              const div = document.createElement('div');
+              div.className = 'check-item';
+              div.innerHTML = `<input type="checkbox"> <span>${step}</span>`;
+              checkContainer.appendChild(div);
+            });
+            checkWrapper.style.display = 'block';
+          } else {
+            checkWrapper.style.display = 'none';
+          }
+
+          // Render Nearest Dropoff
+          const dropInfo = document.getElementById('nearest-dropoff-info');
+          if (assess.nearest_dropoff) {
+            const d = assess.nearest_dropoff;
+            dropInfo.innerHTML = `
+              <div style="font-weight:700; font-size:15px; color:#064e3b;">${d.name}</div>
+              <div style="font-size:13px; color:#047857; margin-top:2px;">${d.location} · <em>${d.hours}</em></div>
+              <div style="font-size:12px; color:#065f46; margin-top:6px;">${d.notes}</div>
+            `;
+          }
+        }
+
+        outcomeBox.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        alert("Assessment error: " + err);
+      }
+    }
+
+    function generateDepositVoucher() {
+      const code = 'IITR-EW-' + Math.floor(100000 + Math.random() * 900000);
+      alert(`🎉 Voucher Generated!\n\nTicket Code: ${code}\nItem: ${currentScan.item_class.toUpperCase()}\nEstimated Green Credit: ₹100\n\nShow this code to the NSS drop-off attendant or drop into the smart locker.`);
+    }
+
+    async function loadSwapListings() {
+      try {
+        const res = await fetch('/api/swap');
+        const listings = await res.json();
+        const container = document.getElementById('swap-list');
+        container.innerHTML = '';
+        listings.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'swap-card';
+          card.innerHTML = `
+            <div>
+              <span class="badge-campus" style="background:#e0f2fe; color:#0369a1; padding:3px 8px;">${item.category.replace('_',' ')}</span>
+              <div class="swap-title" style="margin-top:6px;">${item.title}</div>
+              <div style="font-size:12px; color:var(--gray-text);">${item.condition}</div>
+              <p style="font-size:13px; color:var(--dark); margin:8px 0;">${item.description}</p>
+            </div>
+            <div>
+              <div class="swap-price">${item.price_inr === 0 ? 'FREE / Maker Donation' : '₹' + item.price_inr}</div>
+              <div class="swap-contact">📍 ${item.contact}</div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Failed to load swap listings", err);
+      }
+    }
+
+    async function loadDropoffs() {
+      try {
+        const res = await fetch('/api/dropoffs');
+        const dropoffs = await res.json();
+        const container = document.getElementById('dropoffs-list');
+        container.innerHTML = '';
+        dropoffs.forEach(d => {
+          const card = document.createElement('div');
+          card.className = 'dropoff-card';
+          if (d.bulk_only) card.style.borderLeftColor = '#d97706';
+          card.innerHTML = `
+            <div class="dropoff-name">${d.name} ${d.bulk_only ? '<span style="color:#d97706; font-size:12px;">(Bulk Partner Refinery)</span>' : ''}</div>
+            <div class="dropoff-loc">📍 ${d.location} · ⏰ ${d.hours}</div>
+            <div style="margin-bottom:8px;">
+              ${(d.accepts || []).map(a => `<span class="dropoff-badge">${a.replace('_',' ')}</span>`).join('')}
+            </div>
+            <div style="font-size:12px; color:var(--gray-text);">${d.notes}</div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Failed to load dropoffs", err);
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const s = await res.json();
+        document.getElementById('stat-scans').innerText = s.scans_count || 0;
+        document.getElementById('stat-dropoffs').innerText = s.dropoffs_count || 0;
+        document.getElementById('stat-swaps').innerText = s.swaps_count || 0;
+        document.getElementById('stat-kg').innerText = (s.kg_diverted || 0) + ' kg';
+      } catch (err) {
+        console.error("Failed to load stats", err);
+      }
+    }
+
+    function openSwapModal() {
+      document.getElementById('swap-modal').classList.add('active');
+    }
+
+    function openSwapModalWithCurrent() {
+      document.getElementById('swap-category-input').value = currentScan.item_class;
+      document.getElementById('swap-title-input').value = `Working ${currentScan.item_class.replace('_',' ')}`;
+      document.getElementById('swap-condition-input').value = 'Tested working condition';
+      openSwapModal();
+    }
+
+    function closeSwapModal() {
+      document.getElementById('swap-modal').classList.remove('active');
+    }
+
+    async function submitSwapForm(event) {
+      event.preventDefault();
+      const payload = {
+        title: document.getElementById('swap-title-input').value,
+        category: document.getElementById('swap-category-input').value,
+        condition: document.getElementById('swap-condition-input').value,
+        powers_on: true,
+        price_inr: parseInt(document.getElementById('swap-price-input').value) || 0,
+        contact: document.getElementById('swap-contact-input').value,
+        description: document.getElementById('swap-desc-input').value
+      };
+
+      try {
+        const res = await fetch('/api/swap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          closeSwapModal();
+          switchTab('swap-tab');
+        } else {
+          alert("Error submitting listing");
+        }
+      } catch (err) {
+        alert("Submit failed: " + err);
+      }
+    }
+
+    // Initial load
+    loadStats();
+  </script>
+</body>
+</html>

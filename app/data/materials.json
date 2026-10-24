@@ -1,0 +1,101 @@
+{
+  "smartphone": {
+    "gold_mg": [24, 36],
+    "silver_mg": [90, 250],
+    "palladium_mg": 9,
+    "copper_g": [9, 15],
+    "lithium_g": 1.1,
+    "typical_weight_g": 160,
+    "stores_data": true,
+    "source": "TEAM.md verified facts (Plymouth 2019, Remedia/PoliMi, Falconbridge via US EPA/USGS)",
+    "estimate": false
+  },
+  "laptop": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": [200, 350],
+    "lithium_g": [8, 12],
+    "typical_weight_g": 2000,
+    "stores_data": true,
+    "source": "WEEE teardown averages, copper range estimated (gold/silver omitted per TEAM.md)",
+    "estimate": true
+  },
+  "charger_adapter": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": [25, 45],
+    "lithium_g": null,
+    "typical_weight_g": 90,
+    "stores_data": false,
+    "source": "Transformer windings and connector pin copper estimate",
+    "estimate": true
+  },
+  "cable": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": [10, 25],
+    "lithium_g": null,
+    "typical_weight_g": 40,
+    "stores_data": false,
+    "source": "Standard 1m USB/charging cord stranded copper wiring estimate",
+    "estimate": true
+  },
+  "battery_powerbank": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": [10, 20],
+    "lithium_g": [3.0, 5.0],
+    "typical_weight_g": 220,
+    "stores_data": false,
+    "source": "10k mAh Li-ion cell content (~0.3g Li/Ah) & wiring estimate",
+    "estimate": true
+  },
+  "earphones_headphones": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": [3, 8],
+    "lithium_g": null,
+    "typical_weight_g": 30,
+    "stores_data": false,
+    "source": "Voice coil & jack wiring copper estimate",
+    "estimate": true
+  },
+  "keyboard_mouse": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": [5, 15],
+    "lithium_g": null,
+    "typical_weight_g": 350,
+    "stores_data": false,
+    "source": "Cable & internal lead wiring copper estimate",
+    "estimate": true
+  },
+  "pcb_board": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": [30, 80],
+    "lithium_g": null,
+    "typical_weight_g": 150,
+    "stores_data": false,
+    "source": "Average 150g motherboard copper foil estimate",
+    "estimate": true
+  },
+  "unknown": {
+    "gold_mg": null,
+    "silver_mg": null,
+    "palladium_mg": null,
+    "copper_g": null,
+    "lithium_g": null,
+    "typical_weight_g": null,
+    "stores_data": false,
+    "source": null,
+    "estimate": false
+  }
+}

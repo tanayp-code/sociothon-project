@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+# agent coordination files (not part of the product)
+TEAM.md
+TASKS.md
+reports/
+archive/
+claude_research.md

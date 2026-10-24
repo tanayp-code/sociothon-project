@@ -1,0 +1,50 @@
+[
+  {
+    "id": "drop-1",
+    "name": "NSS Office, Students' Activity Centre (SAC)",
+    "location": "SAC Ground Floor, IIT Roorkee Campus",
+    "lat": 29.8650,
+    "lng": 77.8942,
+    "hours": "10:00 AM - 6:00 PM (Mon-Sat)",
+    "accepts": ["smartphones", "chargers", "cables", "batteries", "earphones", "small_electronics"],
+    "notes": "Official NSS collection drive bin. Vouchers issued upon scan verification.",
+    "placeholder": true,
+    "bulk_only": false
+  },
+  {
+    "id": "drop-2",
+    "name": "Rajendra / Cautley Bhawan Security Desk",
+    "location": "Hostel Central Entrance Guard Post, IIT Roorkee",
+    "lat": 29.8682,
+    "lng": 77.8985,
+    "hours": "24/7 Drop Box",
+    "accepts": ["smartphones", "powerbanks", "cables", "chargers"],
+    "notes": "Equipped with tamper-proof locked e-waste slot.",
+    "placeholder": true,
+    "bulk_only": false
+  },
+  {
+    "id": "drop-3",
+    "name": "Institute Estate Office E-Waste Hub",
+    "location": "Estate Maintenance Building, Near Main Gate, IIT Roorkee",
+    "lat": 29.8635,
+    "lng": 77.8970,
+    "hours": "9:30 AM - 5:30 PM (Mon-Fri)",
+    "accepts": ["laptops", "keyboards", "monitors", "pcbs", "all_electronics"],
+    "notes": "Handles larger electronics and academic department handovers.",
+    "placeholder": true,
+    "bulk_only": false
+  },
+  {
+    "id": "drop-4",
+    "name": "Attero Recycling Processing Facility (Partner Refinery)",
+    "location": "Kh. No. 117, Raipur Industrial Area, Bhagwanpur, Roorkee (Dist. Haridwar)",
+    "lat": 29.9380,
+    "lng": 77.8105,
+    "hours": "B2B Receiving Only (Batch Logistics)",
+    "accepts": ["bulk_campus_e_waste", "lithium_batteries", "pcbs"],
+    "notes": "India's largest CPCB-authorised recycler (~144,000 t/yr). Destination for campus bulk shipments; not for individual student walk-ins.",
+    "placeholder": false,
+    "bulk_only": true
+  }
+]

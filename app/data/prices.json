@@ -1,0 +1,18 @@
+{
+  "as_of": "2026-10-24",
+  "currency": "INR",
+  "rates": {
+    "gold_inr_per_g": 14258.0,
+    "silver_inr_per_g": 210.0,
+    "palladium_inr_per_g": 3320.0,
+    "copper_inr_per_kg": 1320.0
+  },
+  "sources": {
+    "gold": "https://www.goodreturns.in/gold-rates/ (24K Gold ₹14,258/g, Oct 24, 2026)",
+    "silver": "https://www.livemint.com / https://www.goodreturns.in (999 Silver ₹210/g, Oct 24, 2026)",
+    "palladium": "https://www.goldpriceindia.com (Spot Palladium ~₹3,320/g, Oct 2026)",
+    "copper": "https://www.recycleinme.com / https://www.metalmandi.in (Clean copper wire scrap ₹1,320/kg, Oct 2026)"
+  },
+  "unverified": false,
+  "is_indicative": true
+}
