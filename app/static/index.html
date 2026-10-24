@@ -151,7 +151,7 @@
     <section id="scan-tab" class="tab-content active">
       <div class="card">
         <h2>Scan Discarded Electronic Item</h2>
-        <p>Snap a photo of any broken gadget, cable, charger, or PCB. Gemini Flash classifies the item, checks for hazardous battery swelling, and calculates inherent mineral recovery values.</p>
+        <p>Snap a photo of any broken gadget, cable, charger, or PCB. Our AI identifies the item, checks for hazards like battery swelling, and estimates its mineral recovery values.</p>
 
         <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelect(event)">
         
@@ -179,7 +179,7 @@
         <!-- Spinner -->
         <div id="scanner-spinner" class="scanner-loading">
           <div class="spinner"></div>
-          <div style="font-weight:700; color:var(--primary);">Inspecting with Gemini Vision AI...</div>
+          <div style="font-weight:700; color:var(--primary);">Inspecting with AI...</div>
           <div style="font-size:12px; color:var(--gray-text); margin-top:4px;">Detecting device class, damage, and battery condition</div>
         </div>
 
@@ -487,7 +487,7 @@
       currentScan.visible_damage = data.visible_damage;
 
       document.getElementById('result-class-badge').innerText = currentScan.item_class.replace('_', ' ');
-      const providerTag = data.provider ? ` via ${data.provider.toUpperCase()}` : '';
+      const providerTag = "";
       document.getElementById('result-conf').innerText = `Confidence: ${Math.round((data.confidence || 0.95)*100)}%${providerTag}`;
       document.getElementById('result-desc').innerText = data.description || '';
 
