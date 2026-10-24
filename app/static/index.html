@@ -207,10 +207,10 @@
             <h3 style="font-size:15px; margin-bottom:12px;">Step 2: Condition & Triage</h3>
             
             <div class="question-row">
-              <label>1. Does the device turn on / function?</label>
+              <label id="power-question">1. Does it still work?</label>
               <div class="toggle-group">
-                <button type="button" class="toggle-btn" id="btn-power-no" onclick="setPowerState(false)">❌ No (Dead / Broken)</button>
-                <button type="button" class="toggle-btn" id="btn-power-yes" onclick="setPowerState(true)">✅ Yes (Turns On)</button>
+                <button type="button" class="toggle-btn" id="btn-power-no" onclick="setPowerState(false)">❌ No, dead / broken</button>
+                <button type="button" class="toggle-btn" id="btn-power-yes" onclick="setPowerState(true)">✅ Yes, it works</button>
               </div>
             </div>
 
@@ -502,6 +502,9 @@
       const storesData = ['smartphone', 'laptop'].includes(currentScan.item_class);
       document.getElementById('wipe-question-row').style.display = storesData ? 'block' : 'none';
 
+      const itemName = currentScan.item_class === 'unknown' ? 'this item' : 'this ' + currentScan.item_class.replace(/_/g, ' ');
+      document.getElementById('power-question').innerText = ['cable', 'pcb_board'].includes(currentScan.item_class)
+        ? `1. Is ${itemName} still usable (not damaged)?` : `1. Does ${itemName} still turn on / work?`;
       setPowerState(false);
       setWipeState(false);
 
@@ -527,6 +530,14 @@
 
         if (assess.action === 'swap') {
           document.getElementById('outcome-swap').style.display = 'block';
+          let wipeNote = document.getElementById('swap-wipe-note');
+          if (!wipeNote) {
+            wipeNote = document.createElement('div'); wipeNote.id = 'swap-wipe-note';
+            wipeNote.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px;margin:10px 0;font-size:14px;';
+            document.getElementById('outcome-swap').prepend(wipeNote);
+          }
+          wipeNote.innerHTML = '🔒 <b>Wipe it before you hand it over:</b> sign out of all accounts, factory reset, remove SIM / SD card.';
+          wipeNote.hidden = !assess.wipe_before_swap;
           document.getElementById('outcome-dropoff').style.display = 'none';
         } else {
           document.getElementById('outcome-swap').style.display = 'none';

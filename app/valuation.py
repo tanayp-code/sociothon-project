@@ -82,6 +82,8 @@ def assess_item(item_class: str, powers_on: bool, data_wiped: bool) -> Dict[str,
 
     # Action triage: swap if functional, dropoff if dead/scrap
     action = "swap" if powers_on else "dropoff"
+    # A working device that still holds personal data must be wiped before it changes hands.
+    wipe_before_swap = action == "swap" and stores_data and not data_wiped
 
     # Materials payload
     materials_payload = {
@@ -131,6 +133,7 @@ def assess_item(item_class: str, powers_on: bool, data_wiped: bool) -> Dict[str,
         "prices_as_of": prices_data.get("as_of", "2026-10-24"),
         "is_indicative": prices_data.get("is_indicative", True),
         "wipe_checklist": wipe_checklist,
+        "wipe_before_swap": wipe_before_swap,
         "nearest_dropoff": nearest_dropoff,
         "sources": sources,
     }

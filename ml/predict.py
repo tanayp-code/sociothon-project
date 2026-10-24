@@ -41,9 +41,13 @@ GEMINI_MODELS = [
 ]
 
 GROQ_MODELS = [
-    "meta-llama/llama-4-scout-17b-16e-instruct",
     "qwen/qwen3.8-27b",
 ]
+
+# When Gemini fails (e.g. free quota used up), skip it for a while instead of
+# waiting on it for every scan.
+GEMINI_COOLDOWN_S = 300
+_gemini_down_until = 0.0
 
 SYSTEM_PROMPT = """You are an expert e-waste and electronics recycling inspector.
 Analyze the provided image of an electronic item or discarded scrap.
@@ -195,12 +199,16 @@ def predict(image_bytes: bytes) -> Dict[str, Any]:
     provider = "unknown"
 
     # 1. Try Gemini Flash with 6s timeout cap
+    global _gemini_down_until
     try:
+        if time.time() < _gemini_down_until:
+            raise RuntimeError("Gemini skipped (cooling down after recent failure)")
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(_call_gemini_api, processed_bytes)
-            data = future.result(timeout=12.0)
+            data = future.result(timeout=8.0)
             provider = "gemini"
     except Exception as gemini_err:
+        _gemini_down_until = time.time() + GEMINI_COOLDOWN_S
         # 2. Try Groq Vision fallback with 5s timeout
         try:
             with ThreadPoolExecutor(max_workers=1) as executor:
@@ -302,7 +310,10 @@ def predict_pile(image_bytes: bytes) -> Dict[str, Any]:
     """Detects multiple items in one photo. Returns {"items": [...], "provider": str}; never raises."""
     processed_bytes = _downscale_image(image_bytes, max_dim=1280)
     data, provider, err = None, "none", None
-    for name, fn, cap in (("gemini", _call_gemini_api, 20.0), ("groq", _call_groq_api, 15.0)):
+    global _gemini_down_until
+    for name, fn, cap in (("gemini", _call_gemini_api, 12.0), ("groq", _call_groq_api, 15.0)):
+        if name == "gemini" and time.time() < _gemini_down_until:
+            continue
         try:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 data = executor.submit(fn, processed_bytes, PILE_PROMPT).result(timeout=cap)
@@ -310,6 +321,8 @@ def predict_pile(image_bytes: bytes) -> Dict[str, Any]:
             break
         except Exception as e:
             err = e
+            if name == "gemini":
+                _gemini_down_until = time.time() + GEMINI_COOLDOWN_S
     items: List[Dict[str, Any]] = []
     for it in (data or {}).get("items", []) if isinstance(data, dict) else []:
         if not isinstance(it, dict):
