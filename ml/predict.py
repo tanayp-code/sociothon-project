@@ -43,7 +43,6 @@ GEMINI_MODELS = [
 GROQ_MODELS = [
     "meta-llama/llama-4-scout-17b-16e-instruct",
     "qwen/qwen3.8-27b",
-    "openai/gpt-oss-120b",
 ]
 
 SYSTEM_PROMPT = """You are an expert e-waste and electronics recycling inspector.
@@ -163,7 +162,7 @@ def _call_groq_api(processed_bytes: bytes) -> Dict[str, Any]:
                 },
             )
 
-            with urllib.request.urlopen(req, timeout=5.0) as resp:
+            with urllib.request.urlopen(req, timeout=8.0) as resp:
                 result_json = json.loads(resp.read().decode("utf-8"))
                 content = result_json["choices"][0]["message"]["content"]
                 parsed = json.loads(content)
@@ -199,14 +198,14 @@ def predict(image_bytes: bytes) -> Dict[str, Any]:
     try:
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(_call_gemini_api, processed_bytes)
-            data = future.result(timeout=6.0)
+            data = future.result(timeout=12.0)
             provider = "gemini"
     except Exception as gemini_err:
         # 2. Try Groq Vision fallback with 5s timeout
         try:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(_call_groq_api, processed_bytes)
-                data = future.result(timeout=5.0)
+                data = future.result(timeout=10.0)
                 provider = "groq"
         except Exception as groq_err:
             return {
