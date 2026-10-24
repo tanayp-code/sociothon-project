@@ -295,7 +295,7 @@
             <option value="keyboard_mouse">Keyboard / Mouse</option><option value="pcb_board">PCB / Board</option>
           </select>
           <button class="tab-btn" onclick="drawerAddManual()">Add</button>
-          <button class="tab-btn" onclick="drawerExportCSV()">⬇️ Export CSV</button>
+          <button id="drawer-export-btn" class="tab-btn" onclick="drawerExportCSV()">⬇️ Export CSV</button>
           <label class="tab-btn" style="cursor:pointer;">⬆️ Import CSV
             <input type="file" accept=".csv,text/csv" hidden onchange="drawerImportCSV(this.files[0]); this.value='';"></label>
           <button class="tab-btn" onclick="drawerClear()">🗑️ Clear</button>
@@ -754,6 +754,8 @@
           <td style="font-size:12px;color:var(--gray-text);">${it.notes || ''}</td>
           <td><button class="tab-btn" style="padding:4px 8px;" onclick="drawerRemove(${i})">✕</button></td>
         </tr>`).join('') || '<tr><td colspan="7" style="padding:16px;color:var(--gray-text);">No items yet — scan photos or add manually.</td></tr>';
+      const exp = document.getElementById('drawer-export-btn');
+      if (exp) { exp.disabled = !drawer.length; exp.style.opacity = drawer.length ? '1' : '0.45'; exp.style.cursor = drawer.length ? 'pointer' : 'not-allowed'; exp.title = drawer.length ? '' : 'Add at least one item to export'; }
       const tMin = drawer.reduce((a, b) => a + (b.value_min || 0), 0), tMax = drawer.reduce((a, b) => a + (b.value_max || 0), 0);
       const swaps = drawer.filter(d => d.action === 'swap').length, hazards = drawer.filter(d => (d.notes || '').includes('hazard')).length;
       const tile = (k, v) => `<div style="background:var(--gray-light);border-radius:10px;padding:10px 14px;"><div style="font-size:12px;color:var(--gray-text);">${k}</div><div style="font-size:20px;font-weight:700;">${v}</div></div>`;
@@ -763,6 +765,11 @@
 
     const CSV_COLS = ['item_class', 'powers_on', 'value_min_inr', 'value_max_inr', 'action', 'confidence', 'notes'];
     function drawerExportCSV() {
+      if (!drawer.length) {
+        document.getElementById('drawer-status').textContent = 'Add at least one item before exporting a CSV.';
+        document.getElementById('drawer-csv-out').hidden = true;
+        return;
+      }
       const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
       const csv = [CSV_COLS.join(',')].concat(drawer.map(d => [d.item_class, d.powers_on, Math.round(d.value_min || 0), Math.round(d.value_max || 0), d.action, d.confidence, d.notes].map(esc).join(','))).join('\n');
       // Downloads can be blocked in sandboxed viewers, so also show the CSV for copy-paste.
