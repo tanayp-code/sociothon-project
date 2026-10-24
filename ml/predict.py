@@ -34,11 +34,10 @@ ALLOWED_CLASSES = [
     "tablet",
 ]
 
+# Fastest reliable model first (3.1-flash-lite and 3.8-flash were timing out).
 GEMINI_MODELS = [
-    "gemini-3.1-flash-lite",
     "gemini-3.5-flash-lite",
     "gemini-3.5-flash",
-    "gemini-3.8-flash",
 ]
 
 GROQ_MODELS = [
@@ -121,7 +120,7 @@ def _call_gemini_with_key(processed_bytes: bytes, prompt: str, api_key: str) -> 
 
     # No silent retries: on quota errors fail fast so we can fall back to Groq.
     client = genai.Client(api_key=api_key, http_options=types.HttpOptions(
-        timeout=8000, retry_options=types.HttpRetryOptions(attempts=1)))
+        timeout=10000, retry_options=types.HttpRetryOptions(attempts=1)))
     part = types.Part.from_bytes(data=processed_bytes, mime_type="image/jpeg")
 
     config = types.GenerateContentConfig(
@@ -340,7 +339,7 @@ def predict_pile(image_bytes: bytes) -> Dict[str, Any]:
     processed_bytes = _downscale_image(image_bytes, max_dim=1280)
     data, provider, err = None, "none", None
     global _gemini_down_until
-    for name, fn, cap in (("gemini", _call_gemini_api, 12.0), ("groq", _call_groq_api, 15.0)):
+    for name, fn, cap in (("gemini", _call_gemini_api, 14.0), ("groq", _call_groq_api, 15.0)):
         if name == "gemini" and time.time() < _gemini_down_until:
             continue
         try:
