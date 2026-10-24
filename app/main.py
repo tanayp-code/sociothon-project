@@ -104,7 +104,20 @@ async def scan_item(file: UploadFile = File(...)) -> Dict[str, Any]:
         contents = await file.read()
         if not contents:
             raise HTTPException(status_code=400, detail="Empty file uploaded")
-        result = predict(contents)
+        # One AI call per photo: the pile scan also gives us the main item.
+        pile = predict_pile(contents)
+        items = pile.get("items", [])
+        if items:
+            main = max(items, key=lambda i: (i["item_class"] != "unknown", i["item_class"] in ("laptop", "smartphone")))
+            result = {"item_class": main["item_class"], "confidence": 0.9, "top3": [[main["item_class"], 0.9]],
+                      "visible_damage": main.get("visible_damage"), "description": main.get("description", ""),
+                      "provider": pile.get("provider"), "items": items}
+            if any(i.get("safety_warning") for i in items):
+                result["safety_warning"] = next(i["safety_warning"] for i in items if i.get("safety_warning"))
+        else:
+            result = {"item_class": "unknown", "confidence": 0.0, "top3": [["unknown", 1.0]], "visible_damage": None,
+                      "description": "Could not identify the item. Pick it from the list.",
+                      "provider": pile.get("provider"), "items": [], "error": pile.get("error")}
         update_stats(scan_inc=1)
         return result
     except Exception as e:

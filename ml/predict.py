@@ -102,7 +102,9 @@ def _call_gemini_api(processed_bytes: bytes, prompt: str = SYSTEM_PROMPT) -> Dic
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not set")
 
-    client = genai.Client(api_key=api_key)
+    # No silent retries: on quota errors fail fast so we can fall back to Groq.
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(
+        timeout=8000, retry_options=types.HttpRetryOptions(attempts=1)))
     part = types.Part.from_bytes(data=processed_bytes, mime_type="image/jpeg")
 
     config = types.GenerateContentConfig(

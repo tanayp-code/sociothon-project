@@ -452,12 +452,10 @@
 
       try {
         document.getElementById('pile-banner').hidden = true;
-        const pileForm = new FormData(); pileForm.append('file', file);
-        const pilePromise = fetch('/api/scan_pile', { method: 'POST', body: pileForm }).then(r => r.json()).catch(() => ({}));
         const res = await fetch('/api/scan', { method: 'POST', body: formData });
         const data = await res.json();
         populateScanResult(data);
-        pilePromise.then(showPileBanner);
+        showPileBanner(data);
       } catch (err) {
         alert("Scan request failed. Switching to manual class selection.");
         populateScanResult({
