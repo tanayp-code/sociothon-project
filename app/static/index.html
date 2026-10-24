@@ -143,6 +143,7 @@
     <button class="tab-btn active" onclick="switchTab('scan-tab')">📸 Scan & Value</button>
     <button class="tab-btn" onclick="switchTab('swap-tab')">🔄 Campus Swap Board</button>
     <button class="tab-btn" onclick="switchTab('drop-tab')">📍 Dropoff Points</button>
+    <button class="tab-btn" onclick="switchTab('drawer-tab')">🗃️ My Drawer</button>
     <button class="tab-btn" onclick="switchTab('impact-tab')">📊 Impact Counters</button>
   </nav>
 
@@ -294,6 +295,39 @@
     </section>
 
     <!-- TAB 4: IMPACT DASHBOARD -->
+
+    <section id="drawer-tab" class="tab-content">
+      <div class="card" style="padding:20px;">
+        <h2 style="margin:0 0 4px;">🗃️ My Drawer — gadget inventory</h2>
+        <p style="margin:0 0 14px;color:var(--gray-text);">Scan many items at once, compare their value, decide what to swap or recycle. Works for a room, a hostel wing or a lab store.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+          <label class="tab-btn" style="cursor:pointer;">📸 Scan photos (multiple)
+            <input type="file" accept="image/*" multiple hidden onchange="drawerScanFiles(this.files); this.value='';"></label>
+          <select id="drawer-add-select" style="padding:10px;border-radius:8px;border:1px solid var(--gray-border);">
+            <option value="">+ Add item manually…</option>
+            <option value="smartphone">Smartphone</option><option value="laptop">Laptop</option>
+            <option value="charger_adapter">Charger / Adapter</option><option value="cable">Cable</option>
+            <option value="battery_powerbank">Battery / Power Bank</option><option value="earphones_headphones">Earphones / Headphones</option>
+            <option value="keyboard_mouse">Keyboard / Mouse</option><option value="pcb_board">PCB / Board</option>
+          </select>
+          <button class="tab-btn" onclick="drawerAddManual()">Add</button>
+          <button class="tab-btn" onclick="drawerExportCSV()">⬇️ Export CSV</button>
+          <label class="tab-btn" style="cursor:pointer;">⬆️ Import CSV
+            <input type="file" accept=".csv,text/csv" hidden onchange="drawerImportCSV(this.files[0]); this.value='';"></label>
+          <button class="tab-btn" onclick="drawerClear()">🗑️ Clear</button>
+        </div>
+        <div id="drawer-status" style="font-size:13px;color:var(--gray-text);min-height:18px;"></div>
+        <div id="drawer-summary" style="display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;"></div>
+        <div style="overflow-x:auto;">
+          <table id="drawer-table" style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead><tr style="text-align:left;border-bottom:2px solid var(--gray-border);">
+              <th style="padding:8px;">#</th><th>Item</th><th>Works?</th><th>Metal value (₹)</th><th>Action</th><th>Notes</th><th></th>
+            </tr></thead><tbody></tbody>
+          </table>
+        </div>
+        <textarea id="drawer-csv-out" readonly hidden style="width:100%;height:140px;margin-top:10px;font-family:monospace;font-size:12px;"></textarea>
+      </div>
+    </section>
     <section id="impact-tab" class="tab-content">
       <div class="card">
         <h2>Campus E-Waste Circularity Impact</h2>
@@ -693,6 +727,93 @@
 
     // Initial load
     loadStats();
+
+    // ---------- My Drawer: multi-item inventory, compare, CSV import/export ----------
+    let drawer = [];
+    try { drawer = JSON.parse(localStorage.getItem('circle_drawer') || '[]'); } catch (e) { drawer = []; }
+    const drawerSave = () => { try { localStorage.setItem('circle_drawer', JSON.stringify(drawer)); } catch (e) {} };
+    const prettyClass = c => (c || 'unknown').replace(/_/g, ' ');
+    const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+
+    async function drawerAssess(item) {
+      try {
+        const res = await fetch('/api/assess', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item_class: item.item_class, powers_on: item.powers_on, data_wiped: false }) });
+        const d = await res.json();
+        const v = d.metal_value_inr || [0, 0];
+        item.value_min = v[0] || 0; item.value_max = v[1] || 0; item.action = d.action || (item.powers_on ? 'swap' : 'dropoff');
+      } catch (e) { item.action = item.powers_on ? 'swap' : 'dropoff'; }
+      return item;
+    }
+
+    async function drawerScanFiles(files) {
+      const list = Array.from(files || []);
+      for (let i = 0; i < list.length; i++) {
+        document.getElementById('drawer-status').textContent = `Scanning ${i + 1} of ${list.length}…`;
+        const fd = new FormData(); fd.append('file', list[i]);
+        let scan = {};
+        try { scan = await (await fetch('/api/scan', { method: 'POST', body: fd })).json(); } catch (e) {}
+        const item = { item_class: scan.item_class || 'unknown', confidence: scan.confidence || 0, powers_on: false,
+          notes: [scan.visible_damage, scan.safety_warning ? '⚠️ hazard' : ''].filter(Boolean).join(' · ') };
+        drawer.push(await drawerAssess(item)); drawerSave(); drawerRender();
+      }
+      document.getElementById('drawer-status').textContent = list.length ? `Added ${list.length} item(s).` : '';
+    }
+
+    async function drawerAddManual() {
+      const c = document.getElementById('drawer-add-select').value; if (!c) return;
+      drawer.push(await drawerAssess({ item_class: c, confidence: 1, powers_on: false, notes: 'manual' }));
+      drawerSave(); drawerRender();
+    }
+
+    async function drawerToggle(i) { drawer[i].powers_on = !drawer[i].powers_on; await drawerAssess(drawer[i]); drawerSave(); drawerRender(); }
+    function drawerRemove(i) { drawer.splice(i, 1); drawerSave(); drawerRender(); }
+    function drawerClear() { drawer = []; drawerSave(); drawerRender(); }
+
+    function drawerRender() {
+      const rows = drawer.map((it, i) => ({ it, i })).sort((a, b) => (b.it.value_max || 0) - (a.it.value_max || 0));
+      document.querySelector('#drawer-table tbody').innerHTML = rows.map(({ it, i }, n) => `
+        <tr style="border-bottom:1px solid var(--gray-border);">
+          <td style="padding:8px;">${n + 1}</td>
+          <td style="text-transform:capitalize;">${prettyClass(it.item_class)}${it.confidence && it.confidence < 1 ? ` <small style="color:var(--gray-text)">(${Math.round(it.confidence * 100)}%)</small>` : ''}</td>
+          <td><button class="tab-btn" style="padding:4px 10px;" onclick="drawerToggle(${i})">${it.powers_on ? '✅ Yes' : '❌ No'}</button></td>
+          <td>${inr(it.value_min || 0)} – ${inr(it.value_max || 0)}</td>
+          <td>${it.action === 'swap' ? '🔄 Swap / reuse' : '♻️ E-waste bin'}</td>
+          <td style="font-size:12px;color:var(--gray-text);">${it.notes || ''}</td>
+          <td><button class="tab-btn" style="padding:4px 8px;" onclick="drawerRemove(${i})">✕</button></td>
+        </tr>`).join('') || '<tr><td colspan="7" style="padding:16px;color:var(--gray-text);">No items yet — scan photos or add manually.</td></tr>';
+      const tMin = drawer.reduce((a, b) => a + (b.value_min || 0), 0), tMax = drawer.reduce((a, b) => a + (b.value_max || 0), 0);
+      const swaps = drawer.filter(d => d.action === 'swap').length, hazards = drawer.filter(d => (d.notes || '').includes('hazard')).length;
+      const tile = (k, v) => `<div style="background:var(--gray-light);border-radius:10px;padding:10px 14px;"><div style="font-size:12px;color:var(--gray-text);">${k}</div><div style="font-size:20px;font-weight:700;">${v}</div></div>`;
+      document.getElementById('drawer-summary').innerHTML = tile('Items', drawer.length) + tile('Total metal value', drawer.length ? `${inr(tMin)} – ${inr(tMax)}` : '₹0')
+        + tile('To swap / reuse', swaps) + tile('To e-waste bin', drawer.length - swaps) + tile('Hazards', hazards);
+    }
+
+    const CSV_COLS = ['item_class', 'powers_on', 'value_min_inr', 'value_max_inr', 'action', 'confidence', 'notes'];
+    function drawerExportCSV() {
+      const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const csv = [CSV_COLS.join(',')].concat(drawer.map(d => [d.item_class, d.powers_on, Math.round(d.value_min || 0), Math.round(d.value_max || 0), d.action, d.confidence, d.notes].map(esc).join(','))).join('\n');
+      // Downloads can be blocked in sandboxed viewers, so also show the CSV for copy-paste.
+      try {
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = 'circl-e-drawer.csv'; document.body.appendChild(a); a.click(); a.remove();
+      } catch (e) {}
+      const out = document.getElementById('drawer-csv-out'); out.value = csv; out.hidden = false;
+    }
+
+    async function drawerImportCSV(file) {
+      if (!file) return;
+      const lines = (await file.text()).trim().split(/\r?\n/); const head = lines.shift().split(',').map(h => h.replace(/"/g, '').trim());
+      const ci = head.indexOf('item_class'), pi = head.indexOf('powers_on'), ni = head.indexOf('notes');
+      if (ci < 0) { document.getElementById('drawer-status').textContent = 'CSV needs an item_class column.'; return; }
+      for (const line of lines) {
+        const cells = (line.match(/("([^"]|"")*"|[^,]*)(,|$)/g) || []).map(c => c.replace(/,$/, '').replace(/^"|"$/g, '').replace(/""/g, '"'));
+        if (!cells[ci]) continue;
+        drawer.push(await drawerAssess({ item_class: cells[ci].trim(), confidence: 1, powers_on: /^(true|yes|1)$/i.test(cells[pi] || ''), notes: ni >= 0 ? cells[ni] : 'imported' }));
+      }
+      drawerSave(); drawerRender(); document.getElementById('drawer-status').textContent = `Imported ${lines.length} row(s).`;
+    }
+    drawerRender();
   </script>
 </body>
 </html>
