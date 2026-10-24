@@ -244,13 +244,6 @@
               <h4>🔒 Mandatory Data-Wipe Protocol Before Deposit</h4>
               <div id="checklist-items"></div>
             </div>
-
-            <!-- Nearest Dropoff -->
-            <div class="card" style="border:1px solid #10b981; background:#f0fdf4;">
-              <h4 style="font-size:16px; color:#065f46; margin-bottom:8px;">📍 Nearest Campus Drop-Off Hub</h4>
-              <div id="nearest-dropoff-info"></div>
-              <button class="btn btn-block" style="margin-top:14px;" onclick="generateDepositVoucher()">🎟️ Generate Deposit Voucher & QR</button>
-            </div>
           </div>
 
           <!-- Swap View -->
@@ -424,7 +417,6 @@
       if (targetContent) targetContent.classList.add('active');
 
       if (tabId === 'swap-tab') loadSwapListings();
-      if (tabId === 'drop-tab') loadDropoffs();
       if (tabId === 'impact-tab') loadStats();
     }
 
@@ -581,17 +573,6 @@
             checkWrapper.style.display = 'block';
           } else {
             checkWrapper.style.display = 'none';
-          }
-
-          // Render Nearest Dropoff
-          const dropInfo = document.getElementById('nearest-dropoff-info');
-          if (assess.nearest_dropoff) {
-            const d = assess.nearest_dropoff;
-            dropInfo.innerHTML = `
-              <div style="font-weight:700; font-size:15px; color:#064e3b;">${d.name}</div>
-              <div style="font-size:13px; color:#047857; margin-top:2px;">${d.location} · <em>${d.hours}</em></div>
-              <div style="font-size:12px; color:#065f46; margin-top:6px;">${d.notes}</div>
-            `;
           }
         }
 
