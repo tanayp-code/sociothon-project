@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from ml.predict import predict
+from ml.predict import predict, predict_pile
 from app.valuation import assess_item, load_json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -87,6 +87,14 @@ class SwapListingCreate(BaseModel):
     description: str = Field(..., max_length=500)
     price_inr: int = Field(0, ge=0)
     contact: str = Field(..., min_length=2, max_length=100)
+
+
+@app.post("/api/scan_pile")
+async def scan_pile(file: UploadFile = File(...)) -> Dict[str, Any]:
+    """One photo of many items -> list of detected items with counts."""
+    result = predict_pile(await file.read())
+    update_stats(scan_inc=sum(i["count"] for i in result["items"]))
+    return result
 
 
 @app.post("/api/scan")

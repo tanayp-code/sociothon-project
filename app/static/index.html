@@ -285,6 +285,8 @@
         <h2 style="margin:0 0 4px;">🗃️ My Drawer — gadget inventory</h2>
         <p style="margin:0 0 14px;color:var(--gray-text);">Scan many items at once, compare their value, decide what to swap or recycle. Works for a room, a hostel wing or a lab store.</p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+          <label class="tab-btn active" style="cursor:pointer;">🧺 Scan a pile (one photo)
+            <input type="file" accept="image/*" hidden onchange="drawerScanPile(this.files[0]); this.value='';"></label>
           <label class="tab-btn" style="cursor:pointer;">📸 Scan photos (multiple)
             <input type="file" accept="image/*" multiple hidden onchange="drawerScanFiles(this.files); this.value='';"></label>
           <select id="drawer-add-select" style="padding:10px;border-radius:8px;border:1px solid var(--gray-border);">
@@ -730,6 +732,28 @@
         drawer.push(await drawerAssess(item)); drawerSave(); drawerRender();
       }
       document.getElementById('drawer-status').textContent = list.length ? `Added ${list.length} item(s).` : '';
+    }
+
+    async function drawerScanPile(file) {
+      if (!file) return;
+      const status = document.getElementById('drawer-status');
+      status.textContent = '🧺 Looking at the whole pile…';
+      const fd = new FormData(); fd.append('file', file);
+      let res = {};
+      try { res = await (await fetch('/api/scan_pile', { method: 'POST', body: fd })).json(); } catch (e) {}
+      const groups = res.items || [];
+      if (!groups.length) { status.textContent = 'Could not find any electronics in that photo. Try better light, or add items manually.'; return; }
+      let added = 0;
+      for (const g of groups) {
+        for (let k = 0; k < (g.count || 1); k++) {
+          const notes = [g.description, g.visible_damage, g.safety_warning ? '⚠️ hazard' : ''].filter(Boolean).join(' · ');
+          drawer.push(await drawerAssess({ item_class: g.item_class, confidence: 0.9, powers_on: false, notes }));
+          added++;
+        }
+      }
+      drawerSave(); drawerRender();
+      const hazards = groups.filter(g => g.safety_warning).length;
+      status.textContent = `Found ${added} item(s) in one photo` + (hazards ? ` — ⚠️ ${hazards} hazard(s): hand swollen batteries in separately.` : '.') + ' Tap "Works?" on anything that still works.';
     }
 
     async function drawerAddManual() {

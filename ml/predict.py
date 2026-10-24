@@ -92,7 +92,7 @@ def _downscale_image(image_bytes: bytes, max_dim: int = 768) -> bytes:
         return image_bytes
 
 
-def _call_gemini_api(processed_bytes: bytes) -> Dict[str, Any]:
+def _call_gemini_api(processed_bytes: bytes, prompt: str = SYSTEM_PROMPT) -> Dict[str, Any]:
     """Invokes Gemini Flash API."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -111,7 +111,7 @@ def _call_gemini_api(processed_bytes: bytes) -> Dict[str, Any]:
         try:
             response = client.models.generate_content(
                 model=model_name,
-                contents=[part, SYSTEM_PROMPT],
+                contents=[part, prompt],
                 config=config,
             )
             raw_text = response.text.strip()
@@ -125,7 +125,7 @@ def _call_gemini_api(processed_bytes: bytes) -> Dict[str, Any]:
     raise RuntimeError(f"All Gemini models failed: {last_error}")
 
 
-def _call_groq_api(processed_bytes: bytes) -> Dict[str, Any]:
+def _call_groq_api(processed_bytes: bytes, prompt: str = SYSTEM_PROMPT) -> Dict[str, Any]:
     """Fallback: Invokes Groq Vision API via OpenAI-compatible endpoint."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
@@ -139,7 +139,7 @@ def _call_groq_api(processed_bytes: bytes) -> Dict[str, Any]:
             payload = {
                 "model": model_name,
                 "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": prompt},
                     {
                         "role": "user",
                         "content": [
@@ -281,6 +281,57 @@ def predict(image_bytes: bytes) -> Dict[str, Any]:
     if safety_warning:
         result["safety_warning"] = safety_warning
 
+    return result
+
+
+PILE_PROMPT = """You are an expert e-waste inspector. The image shows a PILE or GROUP of several items
+(e.g. a drawer emptied onto a bed). List EVERY distinct electronic item you can see.
+
+Use ONLY these item_class values:
+smartphone, laptop, charger_adapter, cable, battery_powerbank, earphones_headphones, keyboard_mouse, pcb_board, unknown
+
+Group identical items and give a count. Note visible damage per group ("cracked screen", "swollen battery",
+"frayed wire", ... or null). If any battery/power bank looks puffed or bulging, visible_damage MUST be "swollen battery".
+Ignore non-electronic objects (bed, table, hands, paper).
+
+Return JSON: {"items": [{"item_class": "...", "count": 1, "visible_damage": null, "description": "max 8 words"}]}
+"""
+
+
+def predict_pile(image_bytes: bytes) -> Dict[str, Any]:
+    """Detects multiple items in one photo. Returns {"items": [...], "provider": str}; never raises."""
+    processed_bytes = _downscale_image(image_bytes, max_dim=1280)
+    data, provider, err = None, "none", None
+    for name, fn, cap in (("gemini", _call_gemini_api, 20.0), ("groq", _call_groq_api, 15.0)):
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                data = executor.submit(fn, processed_bytes, PILE_PROMPT).result(timeout=cap)
+            provider = name
+            break
+        except Exception as e:
+            err = e
+    items: List[Dict[str, Any]] = []
+    for it in (data or {}).get("items", []) if isinstance(data, dict) else []:
+        if not isinstance(it, dict):
+            continue
+        cls = str(it.get("item_class", "unknown")).lower().strip()
+        if cls not in ALLOWED_CLASSES:
+            cls = "unknown"
+        try:
+            count = max(1, min(20, int(it.get("count", 1))))
+        except (TypeError, ValueError):
+            count = 1
+        damage = it.get("visible_damage")
+        if damage and str(damage).lower() in ("null", "none"):
+            damage = None
+        entry = {"item_class": cls, "count": count, "visible_damage": damage,
+                 "description": str(it.get("description", ""))[:60]}
+        if damage and "swollen" in str(damage).lower():
+            entry["safety_warning"] = "Swollen battery: fire risk. Do not bin; hand in separately."
+        items.append(entry)
+    result: Dict[str, Any] = {"items": items, "provider": provider}
+    if data is None:
+        result["error"] = str(err)
     return result
 
 
