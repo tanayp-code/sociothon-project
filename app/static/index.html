@@ -194,6 +194,7 @@
             <div id="result-conf" class="conf-badge">Confidence: 98%</div>
           </div>
           <p id="result-desc" style="font-size:14px; color:var(--dark); margin-bottom:8px;"></p>
+          <div id="pile-banner" hidden style="background:#fef9c3;border:1px solid #facc15;border-radius:10px;padding:12px;margin:8px 0;font-size:14px;"></div>
 
           <!-- Swollen Hazard Banner -->
           <div id="hazard-alert" class="hazard-box" style="display:none;">
@@ -450,9 +451,13 @@
       formData.append('file', file);
 
       try {
+        document.getElementById('pile-banner').hidden = true;
+        const pileForm = new FormData(); pileForm.append('file', file);
+        const pilePromise = fetch('/api/scan_pile', { method: 'POST', body: pileForm }).then(r => r.json()).catch(() => ({}));
         const res = await fetch('/api/scan', { method: 'POST', body: formData });
         const data = await res.json();
         populateScanResult(data);
+        pilePromise.then(showPileBanner);
       } catch (err) {
         alert("Scan request failed. Switching to manual class selection.");
         populateScanResult({
@@ -743,6 +748,29 @@
       try { res = await (await fetch('/api/scan_pile', { method: 'POST', body: fd })).json(); } catch (e) {}
       const groups = res.items || [];
       if (!groups.length) { status.textContent = 'Could not find any electronics in that photo. Try better light, or add items manually.'; return; }
+      await drawerAddGroups(groups);
+    }
+
+    let pendingPile = [];
+    function showPileBanner(res) {
+      const groups = (res && res.items) || [];
+      const total = groups.reduce((a, g) => a + (g.count || 1), 0);
+      const banner = document.getElementById('pile-banner');
+      if (total < 2) { banner.hidden = true; return; }
+      pendingPile = groups;
+      const names = groups.map(g => `${g.count > 1 ? g.count + '× ' : ''}${prettyClass(g.item_class)}`).join(', ');
+      banner.innerHTML = `🧺 <b>This photo has ${total} items:</b> ${names}.<br>
+        <button class="btn" style="margin-top:8px;" onclick="addPendingPile()">Add all ${total} to My Drawer →</button>`;
+      banner.hidden = false;
+    }
+    async function addPendingPile() {
+      switchTab('drawer-tab');
+      document.getElementById('drawer-status').textContent = 'Adding items…';
+      await drawerAddGroups(pendingPile);
+    }
+
+    async function drawerAddGroups(groups) {
+      const status = document.getElementById('drawer-status');
       let added = 0;
       for (const g of groups) {
         for (let k = 0; k < (g.count || 1); k++) {
