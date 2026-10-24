@@ -141,10 +141,10 @@
   </header>
 
   <nav>
-    <button class="tab-btn active" onclick="switchTab('scan-tab')">📸 Scan & Value</button>
-    <button class="tab-btn" onclick="switchTab('swap-tab')">🔄 Campus Swap Board</button>
-    <button class="tab-btn" onclick="switchTab('drawer-tab')">🗃️ My Drawer</button>
-    <button class="tab-btn" onclick="switchTab('impact-tab')">📊 Impact Counters</button>
+    <button class="tab-btn active" onclick="switchTab('scan-tab')">Scan & Value</button>
+    <button class="tab-btn" onclick="switchTab('swap-tab')">Campus Swap Board</button>
+    <button class="tab-btn" onclick="switchTab('drawer-tab')">My Drawer</button>
+    <button class="tab-btn" onclick="switchTab('impact-tab')">Impact Counters</button>
   </nav>
 
   <main>
@@ -157,7 +157,6 @@
         <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelect(event)">
         
         <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-          <div class="upload-icon">📷</div>
           <div class="upload-title">Tap to Take Photo or Upload Image</div>
           <div style="font-size:13px; color: #047857;">Supports Smartphones, Laptops, Chargers, Cables, Batteries, Earphones, PCBs</div>
         </div>
@@ -199,7 +198,7 @@
 
           <!-- Swollen Hazard Banner -->
           <div id="hazard-alert" class="hazard-box" style="display:none;">
-            <h4>⚠️ CRITICAL SAFETY ALERT: Swollen Battery Detected</h4>
+            <h4>CRITICAL SAFETY ALERT: Swollen Battery Detected</h4>
             <p id="hazard-msg">Severe fire & thermal runaway risk. Do NOT puncture, crush, or press. Transport in a fire-safe box to an authorised hazardous e-waste bin.</p>
           </div>
 
@@ -210,16 +209,16 @@
             <div class="question-row">
               <label id="power-question">1. Does it still work?</label>
               <div class="toggle-group">
-                <button type="button" class="toggle-btn" id="btn-power-no" onclick="setPowerState(false)">❌ No, dead / broken</button>
-                <button type="button" class="toggle-btn" id="btn-power-yes" onclick="setPowerState(true)">✅ Yes, it works</button>
+                <button type="button" class="toggle-btn" id="btn-power-no" onclick="setPowerState(false)">No, dead / broken</button>
+                <button type="button" class="toggle-btn" id="btn-power-yes" onclick="setPowerState(true)">Yes, it works</button>
               </div>
             </div>
 
             <div class="question-row" id="wipe-question-row">
               <label>2. Has personal data been formatted/wiped?</label>
               <div class="toggle-group">
-                <button type="button" class="toggle-btn" id="btn-wipe-no" onclick="setWipeState(false)">⚠️ No / Not Sure</button>
-                <button type="button" class="toggle-btn selected" id="btn-wipe-yes" onclick="setWipeState(true)">🔒 Yes, Wiped Clean</button>
+                <button type="button" class="toggle-btn" id="btn-wipe-no" onclick="setWipeState(false)">No / Not Sure</button>
+                <button type="button" class="toggle-btn selected" id="btn-wipe-yes" onclick="setWipeState(true)">Yes, Wiped Clean</button>
               </div>
             </div>
 
@@ -245,7 +244,7 @@
 
             <!-- Wipe Checklist -->
             <div id="wipe-checklist-box" class="checklist-box" style="display:none;">
-              <h4>🔒 Mandatory Data-Wipe Protocol Before Deposit</h4>
+              <h4>Mandatory Data-Wipe Protocol Before Deposit</h4>
               <div id="checklist-items"></div>
             </div>
           </div>
@@ -253,7 +252,7 @@
           <!-- Swap View -->
           <div id="outcome-swap" style="display:none;">
             <div style="background:#ecfdf5; border:2px solid #059669; border-radius:12px; padding:20px; text-align:center; margin-bottom:16px;">
-              <div style="font-size:32px;">🎉</div>
+              <div style="font-size:32px;"></div>
               <div style="font-size:18px; font-weight:800; color:#065f46; margin:8px 0;">Item is Functional — Keep it in Circulation!</div>
               <p style="font-size:13px; color:#047857; margin-bottom:14px;">Reuse is higher on the circular waste hierarchy than shredding. List it for peer swap among IIT Roorkee students or donate to robotics clubs.</p>
               <button class="btn" onclick="openSwapModalWithCurrent()">List on Campus Swap Board →</button>
@@ -286,12 +285,12 @@
 
     <section id="drawer-tab" class="tab-content">
       <div class="card" style="padding:20px;">
-        <h2 style="margin:0 0 4px;">🗃️ My Drawer — gadget inventory</h2>
+        <h2 style="margin:0 0 4px;">My Drawer — gadget inventory</h2>
         <p style="margin:0 0 14px;color:var(--gray-text);">Scan many items at once, compare their value, decide what to swap or recycle. Works for a room, a hostel wing or a lab store.</p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
-          <label class="tab-btn active" style="cursor:pointer;">🧺 Scan a pile (one photo)
+          <label class="tab-btn active" style="cursor:pointer;">Scan a pile (one photo)
             <input type="file" accept="image/*" hidden onchange="drawerScanPile(this.files[0]); this.value='';"></label>
-          <label class="tab-btn" style="cursor:pointer;">📸 Scan photos (multiple)
+          <label class="tab-btn" style="cursor:pointer;">Scan photos (multiple)
             <input type="file" accept="image/*" multiple hidden onchange="drawerScanFiles(this.files); this.value='';"></label>
           <select id="drawer-add-select" style="padding:10px;border-radius:8px;border:1px solid var(--gray-border);">
             <option value="">+ Add item manually…</option>
@@ -301,10 +300,10 @@
             <option value="keyboard_mouse">Keyboard / Mouse</option><option value="pcb_board">PCB / Board</option>
           </select>
           <button class="tab-btn" onclick="drawerAddManual()">Add</button>
-          <button id="drawer-export-btn" class="tab-btn" onclick="drawerExportCSV()">⬇️ Export CSV</button>
-          <label class="tab-btn" style="cursor:pointer;">⬆️ Import CSV
+          <button id="drawer-export-btn" class="tab-btn" onclick="drawerExportCSV()">Export CSV</button>
+          <label class="tab-btn" style="cursor:pointer;">Import CSV
             <input type="file" accept=".csv,text/csv" hidden onchange="drawerImportCSV(this.files[0]); this.value='';"></label>
-          <button class="tab-btn" onclick="drawerClear()">🗑️ Clear</button>
+          <button class="tab-btn" onclick="drawerClear()">Clear</button>
         </div>
         <div id="drawer-status" style="font-size:13px;color:var(--gray-text);min-height:18px;"></div>
         <div id="drawer-summary" style="display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;"></div>
@@ -538,7 +537,7 @@
             wipeNote.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px;margin:10px 0;font-size:14px;';
             document.getElementById('outcome-swap').prepend(wipeNote);
           }
-          wipeNote.innerHTML = '🔒 <b>Wipe it before you hand it over:</b> sign out of all accounts, factory reset, remove SIM / SD card.';
+          wipeNote.innerHTML = '<b>Wipe it before you hand it over:</b> sign out of all accounts, factory reset, remove SIM / SD card.';
           wipeNote.hidden = !assess.wipe_before_swap;
           document.getElementById('outcome-dropoff').style.display = 'none';
         } else {
@@ -604,7 +603,7 @@
 
     function generateDepositVoucher() {
       const code = 'IITR-EW-' + Math.floor(100000 + Math.random() * 900000);
-      alert(`🎉 Voucher Generated!\n\nTicket Code: ${code}\nItem: ${currentScan.item_class.toUpperCase()}\nEstimated Green Credit: ₹100\n\nShow this code to the NSS drop-off attendant or drop into the smart locker.`);
+      alert(`Voucher Generated!\n\nTicket Code: ${code}\nItem: ${currentScan.item_class.toUpperCase()}\nEstimated Green Credit: ₹100\n\nShow this code to the NSS drop-off attendant or drop into the smart locker.`);
     }
 
     async function loadSwapListings() {
@@ -625,7 +624,7 @@
             </div>
             <div>
               <div class="swap-price">${item.price_inr === 0 ? 'FREE / Maker Donation' : '₹' + item.price_inr}</div>
-              <div class="swap-contact">📍 ${item.contact}</div>
+              <div class="swap-contact">${item.contact}</div>
             </div>
           `;
           container.appendChild(card);
@@ -647,7 +646,7 @@
           if (d.bulk_only) card.style.borderLeftColor = '#d97706';
           card.innerHTML = `
             <div class="dropoff-name">${d.name} ${d.bulk_only ? '<span style="color:#d97706; font-size:12px;">(Bulk Partner Refinery)</span>' : ''}</div>
-            <div class="dropoff-loc">📍 ${d.location} · ⏰ ${d.hours}</div>
+            <div class="dropoff-loc">${d.location} · ⏰ ${d.hours}</div>
             <div style="margin-bottom:8px;">
               ${(d.accepts || []).map(a => `<span class="dropoff-badge">${a.replace('_',' ')}</span>`).join('')}
             </div>
@@ -746,7 +745,7 @@
         let scan = {};
         try { scan = await (await fetch('/api/scan', { method: 'POST', body: fd })).json(); } catch (e) {}
         const item = { item_class: scan.item_class || 'unknown', confidence: scan.confidence || 0, powers_on: false,
-          notes: [scan.visible_damage, scan.safety_warning ? '⚠️ hazard' : ''].filter(Boolean).join(' · ') };
+          notes: [scan.visible_damage, scan.safety_warning ? 'hazard' : ''].filter(Boolean).join(' · ') };
         drawer.push(await drawerAssess(item)); drawerSave(); drawerRender();
       }
       document.getElementById('drawer-status').textContent = list.length ? `Added ${list.length} item(s).` : '';
@@ -755,7 +754,7 @@
     async function drawerScanPile(file) {
       if (!file) return;
       const status = document.getElementById('drawer-status');
-      status.textContent = '🧺 Looking at the whole pile…';
+      status.textContent = 'Looking at the whole pile…';
       const fd = new FormData(); fd.append('file', file);
       let res = {};
       try { res = await (await fetch('/api/scan_pile', { method: 'POST', body: fd })).json(); } catch (e) {}
@@ -772,7 +771,7 @@
       if (total < 2) { banner.hidden = true; return; }
       pendingPile = groups;
       const names = groups.map(g => `${g.count > 1 ? g.count + '× ' : ''}${prettyClass(g.item_class)}`).join(', ');
-      banner.innerHTML = `🧺 <b>This photo has ${total} items:</b> ${names}.<br>
+      banner.innerHTML = `<b>This photo has ${total} items:</b> ${names}.<br>
         <button class="btn" style="margin-top:8px;" onclick="addPendingPile()">Add all ${total} to My Drawer →</button>`;
       banner.hidden = false;
     }
@@ -787,14 +786,14 @@
       let added = 0;
       for (const g of groups) {
         for (let k = 0; k < (g.count || 1); k++) {
-          const notes = [g.description, g.visible_damage, g.safety_warning ? '⚠️ hazard' : ''].filter(Boolean).join(' · ');
+          const notes = [g.description, g.visible_damage, g.safety_warning ? 'hazard' : ''].filter(Boolean).join(' · ');
           drawer.push(await drawerAssess({ item_class: g.item_class, confidence: 0.9, powers_on: false, notes }));
           added++;
         }
       }
       drawerSave(); drawerRender();
       const hazards = groups.filter(g => g.safety_warning).length;
-      status.textContent = `Found ${added} item(s) in one photo` + (hazards ? ` — ⚠️ ${hazards} hazard(s): hand swollen batteries in separately.` : '.') + ' Tap "Works?" on anything that still works.';
+      status.textContent = `Found ${added} item(s) in one photo` + (hazards ? ` — ${hazards} hazard(s): hand swollen batteries in separately.` : '.') + ' Tap "Works?" on anything that still works.';
     }
 
     async function drawerAddManual() {
@@ -813,9 +812,9 @@
         <tr style="border-bottom:1px solid var(--gray-border);">
           <td style="padding:8px;">${n + 1}</td>
           <td style="text-transform:capitalize;">${prettyClass(it.item_class)}${it.confidence && it.confidence < 1 ? ` <small style="color:var(--gray-text)">(${Math.round(it.confidence * 100)}%)</small>` : ''}</td>
-          <td><button class="tab-btn" style="padding:4px 10px;" onclick="drawerToggle(${i})">${it.powers_on ? '✅ Yes' : '❌ No'}</button></td>
+          <td><button class="tab-btn" style="padding:4px 10px;" onclick="drawerToggle(${i})">${it.powers_on ? 'Yes' : 'No'}</button></td>
           <td>${inr(it.value_min || 0)} – ${inr(it.value_max || 0)}</td>
-          <td>${it.action === 'swap' ? '🔄 Swap / reuse' : '♻️ E-waste bin'}</td>
+          <td>${it.action === 'swap' ? 'Swap / reuse' : 'E-waste bin'}</td>
           <td style="font-size:12px;color:var(--gray-text);">${it.notes || ''}</td>
           <td><button class="tab-btn" style="padding:4px 8px;" onclick="drawerRemove(${i})">✕</button></td>
         </tr>`).join('') || '<tr><td colspan="7" style="padding:16px;color:var(--gray-text);">No items yet — scan photos or add manually.</td></tr>';
@@ -864,12 +863,12 @@
       const box = document.getElementById('next-step');
       let text, bg, fg;
       if (currentScan.visible_damage && /swollen/i.test(currentScan.visible_damage)) {
-        text = '⚠️ Hand it in separately — swollen battery, do not bin it'; bg = '#fef2f2'; fg = '#b91c1c';
+        text = 'Hand it in separately — swollen battery, do not bin it'; bg = '#fef2f2'; fg = '#b91c1c';
       } else if (assess.action === 'swap') {
-        text = assess.wipe_before_swap ? '🔒 Wipe it, then post it on the swap board' : '🔄 It still works — post it on the swap board';
+        text = assess.wipe_before_swap ? 'Wipe it, then post it on the swap board' : 'It still works — post it on the swap board';
         bg = '#eff6ff'; fg = '#1d4ed8';
       } else {
-        text = (assess.wipe_checklist && assess.wipe_checklist.length) ? '🔒 Wipe your data, then put it in the e-waste bin' : '♻️ Put it in the e-waste bin';
+        text = (assess.wipe_checklist && assess.wipe_checklist.length) ? 'Wipe your data, then put it in the e-waste bin' : 'Put it in the e-waste bin';
         bg = '#ecfdf5'; fg = '#047857';
       }
       box.innerText = text; box.style.background = bg; box.style.color = fg;
